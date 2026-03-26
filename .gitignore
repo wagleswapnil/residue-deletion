@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Packaging
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# pytest
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS junk
+.DS_Store
+
+# for now
+tests/
