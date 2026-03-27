@@ -21,6 +21,13 @@ class Topology():
     def add_tail_section(self, section: Section):
         self.tail.append(section)
 
+    def get_section_by_name(self, name: str) -> Section:
+        name = name.lower()
+
+        for s in self.header_sections + self.sections:
+            if s.name == name:
+                return s
+    
     def __repr__(self):
         return (f"Topology(preamble={self.preamble}, header={self.header}, "
                 f"molecules={self.molecules}, tail={self.tail})")

@@ -9,5 +9,12 @@ class Molecule:
     def add_section(self, section: Section):
         self.sections.append(section)
 
+    def get_section(self, name):
+        name = name.lower()
+        for s in self.sections:
+            if s.name == name:
+                return s
+        return None
+
     def __repr__(self):
         return f"Molecule(name={self.name}, sections={self.sections})"
