@@ -1,4 +1,5 @@
 from typing import List
+from .line import Line
 from .section import Section
 from .molecule import Molecule
 
@@ -9,7 +10,7 @@ class Topology():
         self.molecules: List[Molecule] = []
         self.tail: List[Section] = []
 
-    def add_preamble_line(self, line: str):
+    def add_preamble_line(self, line: Line):
         self.preamble.append(line)
 
     def add_header_section(self, section: Section):

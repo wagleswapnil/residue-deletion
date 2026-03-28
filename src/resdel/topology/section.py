@@ -11,4 +11,5 @@ class Section:
         self.lines.append(line)
 
     def __repr__(self):
-        return f"Section(name={self.name}, lines={self.lines})"
+        lines_preview = "\n".join(repr(line) for line in self.lines)
+        return f"\nSection(name={self.name} \n lines={lines_preview})"

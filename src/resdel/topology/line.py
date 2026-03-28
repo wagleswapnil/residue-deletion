@@ -8,7 +8,6 @@ class Line:
         self.raw = line.strip()
         self.tokens: Optional[List[str]] = None
         self.comment: Optional[str] = None
-
         self.is_section = False
         self.section_name: Optional[str] = None
 
