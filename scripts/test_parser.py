@@ -1,6 +1,6 @@
 from resdel.topology.parser import Parser
 from resdel.topology.writer import Writer
-from resdel.tranform.mapping import AtomMapping
+from resdel.tranformations import Transformation_Bonded_Params
 from typing import Optional
 
 
@@ -19,8 +19,7 @@ def main():
     writer.write_topology()
     print ("Topology parsed and written successfully.")
 
-    atom_map = AtomMapping(topA.top, topB.top)
-    atom_map.build_atom_mapping()
-
+    transformed_topologies = Transformation_Bonded_Params(topA=topA.top, topB=topB.top)
+    transformed_topologies.reassign_atom_indices()
 if __name__ == "__main__":
     main()
