@@ -1,5 +1,7 @@
 from resdel.topology import *
-from typing import Optional
+from typing import List, Optional
+
+from resdel.topology.atom import Atom
 
 class Transformation_Bonded_Params:
     def __init__(self, topA : Topology, topB : Topology, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1"):
@@ -24,8 +26,11 @@ class Transformation_Bonded_Params:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
 
     def reassign_atom_indices(self):
-        for i, atom in enumerate(self.molA.get_section("atoms").lines):
-            breakpoint()
-        return
-
-            
+        atoms : List[Atom] = []
+        for i, line in enumerate(self.molA.get_section("atoms").lines):
+            if line.tokens:
+                atom = Atom()
+                atom.get_atom_info(line.tokens)
+                atoms.append(atom)
+                breakpoint()
+        return atoms
