@@ -19,7 +19,9 @@ def main():
     writer.write_topology()
     print ("Topology parsed and written successfully.")
 
-    transformed_topologies = Transformation_Bonded_Params(topA=topA.top, topB=topB.top)
-    transformed_topologies.reassign_atom_indices()
+    transformed_topologies = Transformation_Bonded_Params(topA=topA.top, topB=topB.top, res_to_delete=3)
+    transformed_topologies.build_atom_mapping()
+    transformed_topologies.tranform_bonds()
+    #print(topB.top.molecules[0].get_section("bonds").lines)
 if __name__ == "__main__":
     main()
