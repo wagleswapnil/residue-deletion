@@ -1,6 +1,7 @@
 from resdel.topology.parser import Parser
 from resdel.topology.writer import Writer
 from resdel.tranformations import Transformation_Bonded_Params
+from resdel.edge1.edge1_topologies import Edge1_Topologies
 from typing import Optional
 
 
@@ -18,10 +19,13 @@ def main():
     writer = Writer(topology=topB.top, file_path=output_file)
     writer.write_topology()
     print ("Topology parsed and written successfully.")
-
+    """
     transformed_topologies = Transformation_Bonded_Params(topA=topA.top, topB=topB.top, res_to_delete=3)
     transformed_topologies.build_atom_mapping()
     transformed_topologies.tranform_bonds()
     #print(topB.top.molecules[0].get_section("bonds").lines)
+    """
+    edge1_topologies = Edge1_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3")
+    edge1_topologies.get_exclusions()
 if __name__ == "__main__":
     main()
