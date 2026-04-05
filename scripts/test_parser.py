@@ -26,6 +26,6 @@ def main():
     #print(topB.top.molecules[0].get_section("bonds").lines)
     """
     edge1_topologies = Edge1_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3")
-    edge1_topologies.get_exclusions()
+    edge1_topologies.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1"   )
 if __name__ == "__main__":
     main()
