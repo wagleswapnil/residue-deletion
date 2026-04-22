@@ -26,6 +26,6 @@ def main():
     #print(topB.top.molecules[0].get_section("bonds").lines)
     """
     edge1_topologies = Edge1_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3", edge_steps=10)
-    edge1_topologies.extract_pairs_from_topology()
+    #edge1_topologies.extract_pairs_from_topology()
 if __name__ == "__main__":
     main()

@@ -28,11 +28,30 @@ class Edge1_Topologies:
         if self.molB is None:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
         self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
-        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
+
+        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
         output_prefix="./tests/data/system_stage1"
         self.exclusionsA = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
-        self.pairsA = self.extract_pairs_from_topology()
+        print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
+        self.pairsA = self.extract_pairs_from_topology(self.topA, self.molA_name)
+        print(f"Extracted pairs from topology A: {sorted(self.pairsA)}")
         assert(self.pairsA.issubset(self.exclusionsA)), "Error: Not all pairs in topology A are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
+        self.exclusionsA.difference_update(self.pairsA)
+        print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
+
+
+        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
+        output_prefix="./tests/data/system_stage5"
+        self.exclusionsB = self.map_exclusions_pairs(self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"))
+        print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
+        self.pairsB = self.map_exclusions_pairs(self.extract_pairs_from_topology(self.topB, self.molB_name))
+        print(f"Extracted pairs from topology B: {sorted(self.pairsB)}")
+        assert(self.pairsB.issubset(self.exclusionsB)), "Error: Not all pairs in topology B are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
+        self.exclusionsB.difference_update(self.pairsB)
+        print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
+
+
+        print(f"Overlap between exclusions of topologies A and B: {sorted(self.exclusionsB - self.exclusionsA)}")
 
 
     def get_tpr_dump(self, mdp, structure, topology, output_prefix):
@@ -100,22 +119,22 @@ class Edge1_Topologies:
     def make_exclusions_set(self, exclusions_dict):
         exclusions_set = set()
         for key, value in exclusions_dict.items():
-            print(f"Processing atom {key} with exclusions {value}")
+            #print(f"Processing atom {key} with exclusions {value}")
             for num in value:
                 pair = tuple(sorted([int(key), int(num)]))
                 exclusions_set.add(pair)
-        print(f"Extracted exclusions: {exclusions_set}")
+        #print(f"Extracted exclusions: {exclusions_set}")
         return exclusions_set
 
-    def extract_pairs_from_topology(self):
-        for mol in self.topA.molecules:
-            if mol.name == self.molA_name:
+    def extract_pairs_from_topology(self, top, molecule_name):
+        for mol in top.molecules:
+            if mol.name == molecule_name:
                 pairs_section = mol.get_section("pairs")
                 if pairs_section is not None:
-                    print(f"Extracted pairs: {self.generate_pairs_set(pairs_section.lines)}")
+                    #print(f"Extracted pairs: {self.generate_pairs_set(pairs_section.lines)}")
                     return self.generate_pairs_set(pairs_section.lines)
                 else:
-                    print(f"No pairs section found in molecule {self.molA_name} of topology A.")
+                    print(f"No pairs section found in molecule {molecule_name} of topology.")
         return
 
     def generate_pairs_set(self, pairs_lines):
@@ -125,3 +144,10 @@ class Edge1_Topologies:
                 pairs_set.add(tuple(sorted([int(line.tokens[0]), int(line.tokens[1])])))
         return pairs_set
         
+    def map_exclusions_pairs(self, pairsB):
+        mapped_pairs = set()
+        for pair in pairsB:
+            #breakpoint()
+            mapped_pair = tuple(sorted([self.mapping[pair[0]], self.mapping[pair[1]]]))
+            mapped_pairs.add(mapped_pair)
+        return mapped_pairs

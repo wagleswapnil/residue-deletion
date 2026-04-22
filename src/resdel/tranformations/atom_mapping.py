@@ -22,7 +22,8 @@ def build_atom_mapping(linesA, linesB, residue_to_delete):
     
     for key in atomsB_dict:
         if key in atomsA_dict:
-            mapping[atomsB_dict[key]] = atomsA_dict[key]
+            #breakpoint()
+            mapping[int(atomsB_dict[key])] = int(atomsA_dict[key])
         else:
             raise ValueError(f"Warning: Atom {key} in topology B not found in topology A. This is not supposed to happen.")
     return mapping
