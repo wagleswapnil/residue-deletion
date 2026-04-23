@@ -13,7 +13,6 @@ class Edge1_Topologies:
         self.molB = None
         self.molA_name = molA_name
         self.molB_name = molB_name
-        self.residue_to_delete = residue_to_delete
         for mol in self.topA.molecules:
             if mol.name == self.molA_name:
                 self.molA = mol
@@ -27,8 +26,13 @@ class Edge1_Topologies:
             raise ValueError(f"Could not find molecule with name {self.molA_name} in topology A")
         if self.molB is None:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
-        self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
+        
+        self.residue_to_delete = residue_to_delete
+        idx_i_minus_1, idx_i, idx_i_plus_1 = self.get_residue_atom_idxs()
+        print(f"Atom indices for residue to delete: {idx_i_minus_1} \n {idx_i} \n {idx_i_plus_1}")
 
+        self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
+        
         self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
         output_prefix="./tests/data/system_stage1"
         self.exclusionsA = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
@@ -54,6 +58,22 @@ class Edge1_Topologies:
         print(f"Overlap between exclusions of topologies A and B: {sorted(self.exclusionsB - self.exclusionsA)}")
 
 
+    def get_residue_atom_idxs(self):
+        idx_i_minus_1 = []
+        idx_i = []
+        idx_i_plus_1 = []
+        for line in self.molA.get_section("atoms").lines:
+            if line.tokens:
+                atom_idx = line.tokens[0]
+                resnr = line.tokens[2]
+                if resnr == self.residue_to_delete:
+                    idx_i.append(int(atom_idx))
+                elif int(resnr) == int(self.residue_to_delete) - 1:
+                    idx_i_minus_1.append(int(atom_idx))
+                elif int(resnr) == int(self.residue_to_delete) + 1:
+                    idx_i_plus_1.append(int(atom_idx))
+        return idx_i_minus_1, idx_i, idx_i_plus_1
+        
     def get_tpr_dump(self, mdp, structure, topology, output_prefix):
         cmd =["gmx", "grompp", "-f", mdp, "-c", structure, "-p", topology, "-o", f"{output_prefix}.tpr"]
         #result = subprocess.run(cmd, check=True, cwd="./")
