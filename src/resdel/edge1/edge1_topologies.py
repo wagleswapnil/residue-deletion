@@ -28,8 +28,10 @@ class Edge1_Topologies:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
         
         self.residue_to_delete = residue_to_delete
-        idx_i_minus_1, idx_i, idx_i_plus_1 = self.get_residue_atom_idxs()
-        print(f"Atom indices for residue to delete: {idx_i_minus_1} \n {idx_i} \n {idx_i_plus_1}")
+        idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N = self.get_residue_atom_idxs()
+        print(f"Atom indices for residues i-1, i and i+1: {idx_i_minus_1} \n {idx_i} \n {idx_i_plus_1}")
+        print(f"C atom index in residue i-1: {idx_i_minus_1_C}")
+        print(f"N atom index in residue i+1: {idx_i_plus_1_N}")
 
         self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
         
@@ -43,12 +45,16 @@ class Edge1_Topologies:
         self.exclusionsA.difference_update(self.pairsA)
         print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
 
+        self.add_peptide_bond(self.molA, idx_i_minus_1_C, idx_i_plus_1_N)
+        topology_writer = Writer(self.topA, "./tests/data/test.top")
+        topology_writer.write_topology()
 
-        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
-        output_prefix="./tests/data/system_stage5"
-        self.exclusionsB = self.map_exclusions_pairs(self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"))
+
+        self.get_tpr_dump(mdp="./tests/MDP/em_test.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/test.top", output_prefix="./tests/data/test")
+        output_prefix="./tests/data/test"
+        self.exclusionsB = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
         print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
-        self.pairsB = self.map_exclusions_pairs(self.extract_pairs_from_topology(self.topB, self.molB_name))
+        self.pairsB = self.extract_pairs_from_topology(self.topB, self.molB_name)
         print(f"Extracted pairs from topology B: {sorted(self.pairsB)}")
         assert(self.pairsB.issubset(self.exclusionsB)), "Error: Not all pairs in topology B are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
         self.exclusionsB.difference_update(self.pairsB)
@@ -58,27 +64,46 @@ class Edge1_Topologies:
         print(f"Overlap between exclusions of topologies A and B: {sorted(self.exclusionsB - self.exclusionsA)}")
 
 
+    def add_peptide_bond(self, mol, idx_i_minus_1_C, idx_i_plus_1_N):
+        line = Line(f"#ifdef ADD_PEPTIDE_BOND")
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"\t{idx_i_minus_1_C} \t{idx_i_plus_1_N} \t 5")
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"#endif")
+        mol.get_section("bonds").add_line(line)
+        #breakpoint()
+        return
+
     def get_residue_atom_idxs(self):
         idx_i_minus_1 = []
         idx_i = []
         idx_i_plus_1 = []
+        idx_i_minus_1_C = None
+        idx_i_plus_1_N = None
         for line in self.molA.get_section("atoms").lines:
             if line.tokens:
                 atom_idx = line.tokens[0]
                 resnr = line.tokens[2]
+                atom_name = line.tokens[4]
                 if resnr == self.residue_to_delete:
                     idx_i.append(int(atom_idx))
                 elif int(resnr) == int(self.residue_to_delete) - 1:
                     idx_i_minus_1.append(int(atom_idx))
+                    if atom_name == "C":
+                        idx_i_minus_1_C = int(atom_idx)
                 elif int(resnr) == int(self.residue_to_delete) + 1:
                     idx_i_plus_1.append(int(atom_idx))
-        return idx_i_minus_1, idx_i, idx_i_plus_1
-        
+                    if atom_name == "N":
+                        idx_i_plus_1_N = int(atom_idx)
+        if idx_i_minus_1_C is None or idx_i_plus_1_N is None:
+            raise ValueError("Could not find C atom in residue i-1 or N atom in residue i+1. This is not supposed to happen.")
+        return idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N
+
     def get_tpr_dump(self, mdp, structure, topology, output_prefix):
         cmd =["gmx", "grompp", "-f", mdp, "-c", structure, "-p", topology, "-o", f"{output_prefix}.tpr"]
-        #result = subprocess.run(cmd, check=True, cwd="./")
+        result = subprocess.run(cmd, check=True, cwd="./")
         cmd = f"gmx dump -s {output_prefix}.tpr > {output_prefix}.txt"
-        #result = subprocess.run(cmd, shell=True, check=True)
+        result = subprocess.run(cmd, shell=True, check=True)
         return
     
     def extract_exclusions_from_tpr_dump(self, tpr_dump_file, output_file, molecule_name : Optional[str] = "system1"):
