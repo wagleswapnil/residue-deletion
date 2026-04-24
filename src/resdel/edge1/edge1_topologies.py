@@ -69,7 +69,7 @@ class Edge1_Topologies:
         mol.get_section("bonds").add_line(line)
         line = Line(f"\t{idx_i_minus_1_C} \t{idx_i_plus_1_N} \t 5")
         mol.get_section("bonds").add_line(line)
-        line = Line(f"#endif")
+        line = Line(f"#endif\n")
         mol.get_section("bonds").add_line(line)
         #breakpoint()
         return
