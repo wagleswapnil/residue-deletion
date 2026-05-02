@@ -17,7 +17,6 @@ class Edge1_Topologies:
             if mol.name == self.molA_name:
                 self.molA = mol
                 break
-
         for mol in self.topB.molecules:
             if mol.name == self.molB_name:
                 self.molB = mol
@@ -42,9 +41,9 @@ class Edge1_Topologies:
         self.pairsA = self.extract_pairs_from_topology(self.topA, self.molA_name)
         print(f"Extracted pairs from topology A: {sorted(self.pairsA)}")
         assert(self.pairsA.issubset(self.exclusionsA)), "Error: Not all pairs in topology A are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
-        self.exclusionsA.difference_update(self.pairsA)
-        print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
-
+        #self.exclusionsA.difference_update(self.pairsA)
+        #print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
+        #
         self.add_peptide_bond(self.molA, idx_i_minus_1_C, idx_i_plus_1_N)
         topology_writer = Writer(self.topA, "./tests/data/test.top")
         topology_writer.write_topology()
@@ -52,16 +51,30 @@ class Edge1_Topologies:
 
         self.get_tpr_dump(mdp="./tests/MDP/em_test.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/test.top", output_prefix="./tests/data/test")
         output_prefix="./tests/data/test"
-        self.exclusionsB = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
+        self.exclusions_temp = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
+        print(f"Extracted exclusions from topology Temp: {sorted(self.exclusions_temp)}")
+        
+
+        #print(f"Exclusions in topology Temp but not in topology A: {sorted(self.exclusions_temp.difference(self.exclusionsA))}")
+        #
+        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
+        output_prefix="./tests/data/system_stage5"
+        self.exclusionsB = self.map_exclusions_pairs(self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"))
         print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
-        self.pairsB = self.extract_pairs_from_topology(self.topB, self.molB_name)
+        self.pairsB = self.map_exclusions_pairs(self.extract_pairs_from_topology(self.topB, self.molB_name))
         print(f"Extracted pairs from topology B: {sorted(self.pairsB)}")
         assert(self.pairsB.issubset(self.exclusionsB)), "Error: Not all pairs in topology B are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
-        self.exclusionsB.difference_update(self.pairsB)
-        print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
+        #self.exclusionsB.difference_update(self.pairsB)
+        #print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
 
+        self.pairsB_minus_A = self.pairsB.difference(self.pairsA)
+        self.exclusionsB_minus_A = self.exclusionsB.difference(self.exclusionsA)
+        print(f"Pairs in topology B but not in  A: {sorted(self.pairsB_minus_A)}")
+        #print(f"Pairs from topology B not in topology A: {sorted(self.pairsB.difference(self.pairsA))}")
+        print(f"Exclusions in topology B not in A: {sorted(self.exclusionsB_minus_A)}")
 
-        print(f"Overlap between exclusions of topologies A and B: {sorted(self.exclusionsB - self.exclusionsA)}")
+        self.exclusions_temp_minus_A_B = self.exclusions_temp.difference(self.exclusionsA).difference(self.exclusionsB)
+        print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
 
 
     def add_peptide_bond(self, mol, idx_i_minus_1_C, idx_i_plus_1_N):
@@ -71,7 +84,6 @@ class Edge1_Topologies:
         mol.get_section("bonds").add_line(line)
         line = Line(f"#endif\n")
         mol.get_section("bonds").add_line(line)
-        #breakpoint()
         return
 
     def get_residue_atom_idxs(self):
@@ -101,9 +113,9 @@ class Edge1_Topologies:
 
     def get_tpr_dump(self, mdp, structure, topology, output_prefix):
         cmd =["gmx", "grompp", "-f", mdp, "-c", structure, "-p", topology, "-o", f"{output_prefix}.tpr"]
-        result = subprocess.run(cmd, check=True, cwd="./")
+        #result = subprocess.run(cmd, check=True, cwd="./")
         cmd = f"gmx dump -s {output_prefix}.tpr > {output_prefix}.txt"
-        result = subprocess.run(cmd, shell=True, check=True)
+        #result = subprocess.run(cmd, shell=True, check=True)
         return
     
     def extract_exclusions_from_tpr_dump(self, tpr_dump_file, output_file, molecule_name : Optional[str] = "system1"):
