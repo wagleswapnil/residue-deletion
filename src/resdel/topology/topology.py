@@ -22,12 +22,22 @@ class Topology():
     def add_tail_section(self, section: Section):
         self.tail.append(section)
 
-    def get_section_by_name(self, name: str) -> Section:
+    def get_header_section_by_name(self, name: str) -> Section:
         name = name.lower()
-
-        for s in self.header_sections + self.sections:
+        for s in self.header:
             if s.name == name:
                 return s
+
+
+    def get_comb_rule_fudgeQQ(self):
+        comb_rule = None
+        fudgeQQ = None
+        for line in self.get_header_section_by_name("defaults").lines:
+            if line.tokens:
+                comb_rule = line.tokens[1]
+                fudgeQQ = line.tokens[4]
+        return comb_rule, fudgeQQ
+
     
     def __repr__(self):
         return (f"Topology(preamble={self.preamble}, header={self.header}, "

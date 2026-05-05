@@ -13,6 +13,8 @@ class Atom:
         self.typeB = None
         self.chargeB = None
         self.massB = None
+        self.sigma = None
+        self.epsilon = None
 
     def get_atom_info(self, tokens : List[str]):
         if len(tokens) < 8:

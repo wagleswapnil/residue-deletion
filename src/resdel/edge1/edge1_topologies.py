@@ -1,14 +1,15 @@
 from resdel.topology import *
-from typing import Optional, List
+from typing import Optional
 from resdel.tranformations.atom_mapping import build_atom_mapping
-import subprocess
-import re
+from resdel.edge1.transformations_bonded import add_peptide_bond
+from resdel.edge1.edge1_utils import *
 
 class Edge1_Topologies:
-    def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, edge_steps : int, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1"):
+    def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
         self.topA = topA
         self.topB = topB
-        self.edge_steps = edge_steps
+        self.edge1_steps = edge1_steps
+        self.residue_to_delete = residue_to_delete
         self.molA = None
         self.molB = None
         self.molA_name = molA_name
@@ -26,185 +27,61 @@ class Edge1_Topologies:
         if self.molB is None:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
         
-        self.residue_to_delete = residue_to_delete
-        idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N = self.get_residue_atom_idxs()
-        print(f"Atom indices for residues i-1, i and i+1: {idx_i_minus_1} \n {idx_i} \n {idx_i_plus_1}")
-        print(f"C atom index in residue i-1: {idx_i_minus_1_C}")
-        print(f"N atom index in residue i+1: {idx_i_plus_1_N}")
-
+        idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N = get_residue_atom_idxs(self.molA, self.residue_to_delete)
+        sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, idx_i_minus_1 + idx_i + idx_i_plus_1)
         self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
         
-        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
+        get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
         output_prefix="./tests/data/system_stage1"
-        self.exclusionsA = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
-        print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
-        self.pairsA = self.extract_pairs_from_topology(self.topA, self.molA_name)
-        print(f"Extracted pairs from topology A: {sorted(self.pairsA)}")
+        self.exclusionsA = extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
+        #print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
+        self.pairsA = extract_pairs_from_topology(self.topA, self.molA_name)
+        #print(f"Extracted pairs from topology A: {sorted(self.pairsA)}")
         assert(self.pairsA.issubset(self.exclusionsA)), "Error: Not all pairs in topology A are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
         #self.exclusionsA.difference_update(self.pairsA)
         #print(f"Extracted exclusions from topology A: {sorted(self.exclusionsA)}")
         #
-        self.add_peptide_bond(self.molA, idx_i_minus_1_C, idx_i_plus_1_N)
+        add_peptide_bond(self.molA, idx_i_minus_1_C, idx_i_plus_1_N)
         topology_writer = Writer(self.topA, "./tests/data/test.top")
         topology_writer.write_topology()
 
 
-        self.get_tpr_dump(mdp="./tests/MDP/em_test.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/test.top", output_prefix="./tests/data/test")
+        get_tpr_dump(mdp="./tests/MDP/em_test.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/test.top", output_prefix="./tests/data/test")
         output_prefix="./tests/data/test"
-        self.exclusions_temp = self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
-        print(f"Extracted exclusions from topology Temp: {sorted(self.exclusions_temp)}")
+        self.exclusions_temp = extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
+        #print(f"Extracted exclusions from topology Temp: {sorted(self.exclusions_temp)}")
         
 
         #print(f"Exclusions in topology Temp but not in topology A: {sorted(self.exclusions_temp.difference(self.exclusionsA))}")
         #
-        self.get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
+        get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
         output_prefix="./tests/data/system_stage5"
-        self.exclusionsB = self.map_exclusions_pairs(self.extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"))
-        print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
-        self.pairsB = self.map_exclusions_pairs(self.extract_pairs_from_topology(self.topB, self.molB_name))
-        print(f"Extracted pairs from topology B: {sorted(self.pairsB)}")
+        self.exclusionsB = map_exclusions_pairs(extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"), self.mapping)
+        #print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
+        self.pairsB = map_exclusions_pairs(extract_pairs_from_topology(self.topB, self.molB_name), self.mapping)
+        #print(f"Extracted pairs from topology B: {sorted(self.pairsB)}")
         assert(self.pairsB.issubset(self.exclusionsB)), "Error: Not all pairs in topology B are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
         #self.exclusionsB.difference_update(self.pairsB)
         #print(f"Extracted exclusions from topology B: {sorted(self.exclusionsB)}")
 
         self.pairsB_minus_A = self.pairsB.difference(self.pairsA)
-        self.exclusionsB_minus_A = self.exclusionsB.difference(self.exclusionsA)
+        self.exclusionsB_minus_A = self.exclusionsB.difference(self.exclusionsA).difference(self.pairsB_minus_A)
         print(f"Pairs in topology B but not in  A: {sorted(self.pairsB_minus_A)}")
         #print(f"Pairs from topology B not in topology A: {sorted(self.pairsB.difference(self.pairsA))}")
         print(f"Exclusions in topology B not in A: {sorted(self.exclusionsB_minus_A)}")
 
         self.exclusions_temp_minus_A_B = self.exclusions_temp.difference(self.exclusionsA).difference(self.exclusionsB)
         print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
-
-
-    def add_peptide_bond(self, mol, idx_i_minus_1_C, idx_i_plus_1_N):
-        line = Line(f"#ifdef ADD_PEPTIDE_BOND")
-        mol.get_section("bonds").add_line(line)
-        line = Line(f"\t{idx_i_minus_1_C} \t{idx_i_plus_1_N} \t 5")
-        mol.get_section("bonds").add_line(line)
-        line = Line(f"#endif\n")
-        mol.get_section("bonds").add_line(line)
-        return
-
-    def get_residue_atom_idxs(self):
-        idx_i_minus_1 = []
-        idx_i = []
-        idx_i_plus_1 = []
-        idx_i_minus_1_C = None
-        idx_i_plus_1_N = None
-        for line in self.molA.get_section("atoms").lines:
-            if line.tokens:
-                atom_idx = line.tokens[0]
-                resnr = line.tokens[2]
-                atom_name = line.tokens[4]
-                if resnr == self.residue_to_delete:
-                    idx_i.append(int(atom_idx))
-                elif int(resnr) == int(self.residue_to_delete) - 1:
-                    idx_i_minus_1.append(int(atom_idx))
-                    if atom_name == "C":
-                        idx_i_minus_1_C = int(atom_idx)
-                elif int(resnr) == int(self.residue_to_delete) + 1:
-                    idx_i_plus_1.append(int(atom_idx))
-                    if atom_name == "N":
-                        idx_i_plus_1_N = int(atom_idx)
-        if idx_i_minus_1_C is None or idx_i_plus_1_N is None:
-            raise ValueError("Could not find C atom in residue i-1 or N atom in residue i+1. This is not supposed to happen.")
-        return idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N
-
-    def get_tpr_dump(self, mdp, structure, topology, output_prefix):
-        cmd =["gmx", "grompp", "-f", mdp, "-c", structure, "-p", topology, "-o", f"{output_prefix}.tpr"]
-        #result = subprocess.run(cmd, check=True, cwd="./")
-        cmd = f"gmx dump -s {output_prefix}.tpr > {output_prefix}.txt"
-        #result = subprocess.run(cmd, shell=True, check=True)
-        return
-    
-    def extract_exclusions_from_tpr_dump(self, tpr_dump_file, output_file, molecule_name : Optional[str] = "system1"):
-        exclusions = {}
-        in_target_moltype = False
-        read_exclusions = False
-        buffer = None
-        collecting = False
-        f = open(tpr_dump_file, "r")
-        for line in f:
-            if line.strip().startswith("moltype"):
-                in_target_moltype = False
-
-            if f'name="{molecule_name}"' in line:
-                in_target_moltype = True
-                continue
-
-            if in_target_moltype:
-                if "Bond:" in line:
-                    read_exclusions = False
-                elif "excls:" in line:
-                    read_exclusions = True
-            
-            if in_target_moltype and read_exclusions:
-                if "numLists" in line or "numElements" in line:
-                    continue
-                if line.strip().startswith("excls["):
-                    buffer = line.strip()
-                    collecting = True
-                    if "}" in line:
-                        atom, nums = self.parse_excls_buffer(buffer)
-                        exclusions[atom] = nums
-                        buffer = None
-                        collecting = False
-                elif collecting:
-                    buffer += " " + line.strip()
-                    if "}" in line:
-                        atom, nums = self.parse_excls_buffer(buffer)
-                        exclusions[atom] = nums
-                        buffer = None
-                        collecting = False
-        f.close()
-        return self.make_exclusions_set(exclusions)
-    
-    def parse_excls_buffer(self, buffer):
-        pattern = r"excls\[(\d+)\]\[num=\d+\]=\{([^}]*)\}"
-        match = re.search(pattern, buffer)
-        atom_index = self.make_exclusions_1_indexed(match.group(1))
-        nums_str = self.make_exclusions_1_indexed(match.group(2).strip().split(','))
-        return  atom_index, nums_str 
-    
-    
-    def make_exclusions_1_indexed(self, num):
-        if isinstance(num, list):
-            return [str(int(n) + 1) for n in num]
-        return str(int(num) + 1)
-
-    def make_exclusions_set(self, exclusions_dict):
-        exclusions_set = set()
-        for key, value in exclusions_dict.items():
-            #print(f"Processing atom {key} with exclusions {value}")
-            for num in value:
-                pair = tuple(sorted([int(key), int(num)]))
-                exclusions_set.add(pair)
-        #print(f"Extracted exclusions: {exclusions_set}")
-        return exclusions_set
-
-    def extract_pairs_from_topology(self, top, molecule_name):
-        for mol in top.molecules:
-            if mol.name == molecule_name:
-                pairs_section = mol.get_section("pairs")
-                if pairs_section is not None:
-                    #print(f"Extracted pairs: {self.generate_pairs_set(pairs_section.lines)}")
-                    return self.generate_pairs_set(pairs_section.lines)
-                else:
-                    print(f"No pairs section found in molecule {molecule_name} of topology.")
-        return
-
-    def generate_pairs_set(self, pairs_lines):
-        pairs_set = set()
-        for line in pairs_lines:
-            if line.tokens:
-                pairs_set.add(tuple(sorted([int(line.tokens[0]), int(line.tokens[1])])))
-        return pairs_set
+        comb_rule, fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
+        print(comb_rule, fudge_QQ)
         
-    def map_exclusions_pairs(self, pairsB):
-        mapped_pairs = set()
-        for pair in pairsB:
-            #breakpoint()
-            mapped_pair = tuple(sorted([self.mapping[pair[0]], self.mapping[pair[1]]]))
-            mapped_pairs.add(mapped_pair)
-        return mapped_pairs
+
+    
+
+
+    
+    
+
+    
+        
+    
