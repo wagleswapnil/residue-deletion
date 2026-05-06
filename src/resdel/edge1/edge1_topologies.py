@@ -1,5 +1,5 @@
 from resdel.topology import *
-from typing import Optional
+from typing import Optional, List
 from resdel.tranformations.atom_mapping import build_atom_mapping
 from resdel.edge1.transformations_bonded import add_peptide_bond
 from resdel.edge1.edge1_utils import *
@@ -28,7 +28,9 @@ class Edge1_Topologies:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
         
         idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N = get_residue_atom_idxs(self.molA, self.residue_to_delete)
-        sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, idx_i_minus_1 + idx_i + idx_i_plus_1)
+        self.sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, idx_i_minus_1 + idx_i + idx_i_plus_1)
+        for key, value in self.sigma_epsilon_charges.items():
+            print(f"Atom idx: {key}, sigma: {value[0]}, epsilon: {value[1]}, charge: {value[2]}")
         self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
         
         get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
@@ -72,8 +74,18 @@ class Edge1_Topologies:
 
         self.exclusions_temp_minus_A_B = self.exclusions_temp.difference(self.exclusionsA).difference(self.exclusionsB)
         print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
-        comb_rule, fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
-        print(comb_rule, fudge_QQ)
+        self.comb_rule, self.fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
+        print(self.comb_rule, self.fudge_QQ)
+        
+        self.add_pairs_nb()
+
+
+    def add_pairs_nb(self):
+        pairs_nb = List[Line]
+        #pairs_to_add = self.calculate_nb_pairs_states(self.pairsB_minus_A, stateA="full interactions", stateB="scaled interactions")
+        exclusions_to_add = self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B)
+        print(f"Exclusions to add as nb interactions: {exclusions_to_add}")
+        return 
         
 
     
