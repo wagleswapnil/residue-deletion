@@ -3,6 +3,7 @@ from typing import Optional, List
 from resdel.tranformations.atom_mapping import build_atom_mapping
 from resdel.edge1.transformations_bonded import add_peptide_bond
 from resdel.edge1.edge1_utils import *
+from resdel.edge1.pair_nb import Pair_nb_object
 
 class Edge1_Topologies:
     def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
@@ -76,18 +77,56 @@ class Edge1_Topologies:
         print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
         self.comb_rule, self.fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
         print(self.comb_rule, self.fudge_QQ)
-        
-        self.add_pairs_nb()
-
-
-    def add_pairs_nb(self):
-        pairs_nb = List[Line]
-        #pairs_to_add = self.calculate_nb_pairs_states(self.pairsB_minus_A, stateA="full interactions", stateB="scaled interactions")
-        exclusions_to_add = self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B)
-        print(f"Exclusions to add as nb interactions: {exclusions_to_add}")
-        return 
+    
+        self.add_exclusions_section_to_topology()
+        self.add_pairs_nb_section_to_topology()
+        topology_writer = Writer(self.topA, "./tests/data/test.top")
+        topology_writer.write_topology()
         
 
+    def add_exclusions_section_to_topology(self):
+        exclusions_dict = {}
+        for x in sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B)):
+            exclusions_dict[x[0]] = exclusions_dict[x[0]] + " " + str(x[1]) if x[0] in exclusions_dict else str(x[1])
+            exclusions_dict[x[1]] = exclusions_dict[x[1]] + " " + str(x[0]) if x[1] in exclusions_dict else str(x[0])
+        
+        exclusions_section = Section("exclusions")
+        exclusions_section.add_line(Line("#ifdef EXCLS_ON"))
+        for key, value in sorted(exclusions_dict.items()):
+            exclusions_section.add_line(Line(f"{key}  {value}"))
+        exclusions_section.add_line(Line("#endif"))
+        exclusions_section.add_line(Line(""))
+        exclusions_section.add_line(Line(""))
+        self.molA.add_section(exclusions_section)
+        return
+
+
+    def add_pairs_nb_section_to_topology(self):
+        pairs_nb_list = self.get_pairs_nb_objects()
+        pairs_nb_section = Section("pairs_nb")
+        for step in range(0, self.edge1_steps):
+            pairs_nb_section.add_line(Line(f"#ifdef EDGE1_STEP{step}"))
+            for pair_nb in pairs_nb_list:
+                pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / self.edge1_steps))
+            pairs_nb_section.add_line(Line("#endif"))
+        pairs_nb_section.add_line(Line(f"#ifdef STAGE2"))
+        for pair_nb in pairs_nb_list:
+            pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / self.edge1_steps))
+        pairs_nb_section.add_line(Line("#endif"))
+        pairs_nb_section.add_line(Line(""))
+        pairs_nb_section.add_line(Line(""))
+        self.molA.add_section(pairs_nb_section)
+        return
+        
+    def get_pairs_nb_objects(self):
+        pairs_nb_list = []
+        for x in sorted(self.pairsB_minus_A):
+            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="scaled_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
+        for x in sorted(self.exclusionsB_minus_A):
+            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="no_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
+        for x in sorted(self.exclusions_temp_minus_A_B):
+            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="no_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
+        return pairs_nb_list
     
 
 

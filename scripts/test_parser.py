@@ -2,6 +2,7 @@ from resdel.topology.parser import Parser
 from resdel.topology.writer import Writer
 from resdel.tranformations import Transformation_Bonded_Params
 from resdel.edge1.edge1_topologies import Edge1_Topologies
+from resdel.edge3.edge3_topologies import Edge3_Topologies
 from typing import Optional
 
 
@@ -26,6 +27,7 @@ def main():
     #print(topB.top.molecules[0].get_section("bonds").lines)
     """
     edge1_topologies = Edge1_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3", edge1_steps=10)
+    edge3_topologies = Edge3_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3")
     #edge1_topologies.extract_pairs_from_topology()
 if __name__ == "__main__":
     main()

@@ -28,7 +28,6 @@ class Topology():
             if s.name == name:
                 return s
 
-
     def get_comb_rule_fudgeQQ(self):
         comb_rule = None
         fudgeQQ = None
