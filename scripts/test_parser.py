@@ -7,7 +7,6 @@ from typing import Optional
 
 
 def main():
-    
     input_fileA = "tests/data/system_stage1.top"
     topA = Parser(file_path=input_fileA)
     topA.parse_topology()
@@ -27,7 +26,6 @@ def main():
     #print(topB.top.molecules[0].get_section("bonds").lines)
     """
     edge1_topologies = Edge1_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3", edge1_steps=10)
-    edge3_topologies = Edge3_Topologies(topA=topA.top, topB=topB.top, residue_to_delete="3")
     #edge1_topologies.extract_pairs_from_topology()
 if __name__ == "__main__":
     main()

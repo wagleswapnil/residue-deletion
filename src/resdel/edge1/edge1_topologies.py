@@ -76,12 +76,14 @@ class Edge1_Topologies:
         self.exclusions_temp_minus_A_B = self.exclusions_temp.difference(self.exclusionsA).difference(self.exclusionsB)
         print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
         self.comb_rule, self.fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
-        print(self.comb_rule, self.fudge_QQ)
     
         self.add_exclusions_section_to_topology()
         self.add_pairs_nb_section_to_topology()
-        topology_writer = Writer(self.topA, "./tests/data/test.top")
-        topology_writer.write_topology()
+        #topology_writer = Writer(self.topA, "./tests/data/test.top")
+        #topology_writer.write_topology()
+        
+    def __repr__(self):
+        return (f"Edge1_Topologies with topology A (topA), topology B (topB), residue to delete: {self.residue_to_delete}, molA name: {self.molA_name}, molB name: {self.molB_name}, edge1 steps: {self.edge1_steps}")
         
 
     def add_exclusions_section_to_topology(self):

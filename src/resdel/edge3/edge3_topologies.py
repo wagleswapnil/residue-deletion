@@ -7,3 +7,4 @@ class Edge3_Topologies:
         self.topA = topA
         self.topB = topB
         self.residue_to_delete = residue_to_delete
+        
