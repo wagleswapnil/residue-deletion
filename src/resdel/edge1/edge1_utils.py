@@ -7,6 +7,10 @@ def get_residue_atom_idxs(mol, residue_to_delete):
     idx_i_plus_1 = []
     idx_i_minus_1_C = None
     idx_i_plus_1_N = None
+    idx_i_C = None
+    idx_i_N = None
+    idx_i_minus_1_N = None
+    idx_i_plus_1_C = None
     for line in mol.get_section("atoms").lines:
         if line.tokens:
             atom_idx = line.tokens[0]
@@ -14,17 +18,25 @@ def get_residue_atom_idxs(mol, residue_to_delete):
             atom_name = line.tokens[4]
             if resnr == residue_to_delete:
                 idx_i.append(int(atom_idx))
+                if atom_name == "C":
+                    idx_i_C = int(atom_idx)
+                elif atom_name == "N":
+                    idx_i_N = int(atom_idx)
             elif int(resnr) == int(residue_to_delete) - 1:
                 idx_i_minus_1.append(int(atom_idx))
                 if atom_name == "C":
                     idx_i_minus_1_C = int(atom_idx)
+                elif atom_name == "N":
+                    idx_i_minus_1_N = int(atom_idx)
             elif int(resnr) == int(residue_to_delete) + 1:
                 idx_i_plus_1.append(int(atom_idx))
                 if atom_name == "N":
                     idx_i_plus_1_N = int(atom_idx)
-    if idx_i_minus_1_C is None or idx_i_plus_1_N is None:
-        raise ValueError("Could not find C atom in residue i-1 or N atom in residue i+1. This is not supposed to happen.")
-    return idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N
+                elif atom_name == "C":
+                    idx_i_plus_1_C = int(atom_idx)
+    if idx_i_minus_1_C is None or idx_i_plus_1_N is None or idx_i_C is None or idx_i_N is None or idx_i_minus_1_N is None or idx_i_plus_1_C is None:
+        raise ValueError("Could not find all required atoms in the specified residues. This is not supposed to happen.")
+    return idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C
 
 
 def get_sigma_epsilon_charges(top_atomtypes, mol, idx_list):

@@ -1,9 +1,10 @@
 from resdel.topology import *
 from typing import Optional, List
 from resdel.tranformations.atom_mapping import build_atom_mapping
-from resdel.edge1.transformations_bonded import add_peptide_bond
 from resdel.edge1.edge1_utils import *
 from resdel.edge1.pair_nb import Pair_nb_object
+from resdel.edge1.transformations_nonbonded import add_exclusions_section_to_topology, add_pairs_nb_section_to_topology
+from resdel.edge1.transformations_bonded import *
 
 class Edge1_Topologies:
     def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
@@ -28,7 +29,7 @@ class Edge1_Topologies:
         if self.molB is None:
             raise ValueError(f"Could not find molecule with name {self.molB_name} in topology B")
         
-        idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_C, idx_i_plus_1_N = get_residue_atom_idxs(self.molA, self.residue_to_delete)
+        idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C = get_residue_atom_idxs(self.molA, self.residue_to_delete)
         self.sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, idx_i_minus_1 + idx_i + idx_i_plus_1)
         for key, value in self.sigma_epsilon_charges.items():
             print(f"Atom idx: {key}, sigma: {value[0]}, epsilon: {value[1]}, charge: {value[2]}")
@@ -77,58 +78,27 @@ class Edge1_Topologies:
         print(f"Exclusions in topology Temp but not in A or B: {sorted(self.exclusions_temp_minus_A_B)}")
         self.comb_rule, self.fudge_QQ = self.topA.get_comb_rule_fudgeQQ()
     
-        self.add_exclusions_section_to_topology()
-        self.add_pairs_nb_section_to_topology()
-        #topology_writer = Writer(self.topA, "./tests/data/test.top")
-        #topology_writer.write_topology()
+        self.molA.add_section(add_exclusions_section_to_topology(sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B))))
+        self.molA.add_section(add_pairs_nb_section_to_topology(self.pairsB_minus_A, self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
+
+        self.molA.replace_section("bonds", updated_bonds_section(self.molA.get_section("bonds").lines, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C))
+        
+
+
+
+        topology_writer = Writer(self.topA, "./tests/data/test.top")
+        topology_writer.write_topology()
+
+        print("Done")
         
     def __repr__(self):
         return (f"Edge1_Topologies with topology A (topA), topology B (topB), residue to delete: {self.residue_to_delete}, molA name: {self.molA_name}, molB name: {self.molB_name}, edge1 steps: {self.edge1_steps}")
         
 
-    def add_exclusions_section_to_topology(self):
-        exclusions_dict = {}
-        for x in sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B)):
-            exclusions_dict[x[0]] = exclusions_dict[x[0]] + " " + str(x[1]) if x[0] in exclusions_dict else str(x[1])
-            exclusions_dict[x[1]] = exclusions_dict[x[1]] + " " + str(x[0]) if x[1] in exclusions_dict else str(x[0])
-        
-        exclusions_section = Section("exclusions")
-        exclusions_section.add_line(Line("#ifdef EXCLS_ON"))
-        for key, value in sorted(exclusions_dict.items()):
-            exclusions_section.add_line(Line(f"{key}  {value}"))
-        exclusions_section.add_line(Line("#endif"))
-        exclusions_section.add_line(Line(""))
-        exclusions_section.add_line(Line(""))
-        self.molA.add_section(exclusions_section)
-        return
+    
 
 
-    def add_pairs_nb_section_to_topology(self):
-        pairs_nb_list = self.get_pairs_nb_objects()
-        pairs_nb_section = Section("pairs_nb")
-        for step in range(0, self.edge1_steps):
-            pairs_nb_section.add_line(Line(f"#ifdef EDGE1_STEP{step}"))
-            for pair_nb in pairs_nb_list:
-                pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / self.edge1_steps))
-            pairs_nb_section.add_line(Line("#endif"))
-        pairs_nb_section.add_line(Line(f"#ifdef STAGE2"))
-        for pair_nb in pairs_nb_list:
-            pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / self.edge1_steps))
-        pairs_nb_section.add_line(Line("#endif"))
-        pairs_nb_section.add_line(Line(""))
-        pairs_nb_section.add_line(Line(""))
-        self.molA.add_section(pairs_nb_section)
-        return
-        
-    def get_pairs_nb_objects(self):
-        pairs_nb_list = []
-        for x in sorted(self.pairsB_minus_A):
-            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="scaled_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
-        for x in sorted(self.exclusionsB_minus_A):
-            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="no_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
-        for x in sorted(self.exclusions_temp_minus_A_B):
-            pairs_nb_list.append(Pair_nb_object(x, self.sigma_epsilon_charges[str(x[0])], self.sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="no_interactions", comb_rule=self.comb_rule, fudge_QQ=self.fudge_QQ))
-        return pairs_nb_list
+    
     
 
 
