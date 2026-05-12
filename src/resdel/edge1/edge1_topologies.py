@@ -31,8 +31,8 @@ class Edge1_Topologies:
         
         idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C = get_residue_atom_idxs(self.molA, self.residue_to_delete)
         self.sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, idx_i_minus_1 + idx_i + idx_i_plus_1)
-        for key, value in self.sigma_epsilon_charges.items():
-            print(f"Atom idx: {key}, sigma: {value[0]}, epsilon: {value[1]}, charge: {value[2]}")
+        #for key, value in self.sigma_epsilon_charges.items():
+        #    print(f"Atom idx: {key}, sigma: {value[0]}, epsilon: {value[1]}, charge: {value[2]}")
         self.mapping = build_atom_mapping(self.molA.get_section("atoms").lines, self.molB.get_section("atoms").lines, int(self.residue_to_delete))
         
         get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
@@ -81,7 +81,13 @@ class Edge1_Topologies:
         self.molA.add_section(add_exclusions_section_to_topology(sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B))))
         self.molA.add_section(add_pairs_nb_section_to_topology(self.pairsB_minus_A, self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
 
-        self.molA.replace_section("bonds", updated_bonds_section(self.molA.get_section("bonds").lines, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C))
+        self.harmonic_bondsB_minus_A = map_bonds(extract_harmonic_bonds_from_topology(self.molB), self.mapping).difference(extract_harmonic_bonds_from_topology(self.molA))
+        print(f"Bonds in topology B but not in A: {sorted(self.harmonic_bondsB_minus_A)}")
+        assert(len(self.harmonic_bondsB_minus_A) == 1), "Error: There should be only one harmonic bond in topology B that is not present in topology A. "
+        topB_bond_to_add = get_topB_bond_parameters(self.molB, self.harmonic_bondsB_minus_A, self.mapping)
+        print(f"Parameters of the new bond to add from topology B: {topB_bond_to_add.raw if topB_bond_to_add is not None else 'None'}")
+        
+        self.molA.replace_section("bonds", updated_bonds_section(self.molA.get_section("bonds").lines, topB_bond_to_add, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C))
         
 
 
