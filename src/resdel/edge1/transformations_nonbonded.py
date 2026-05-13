@@ -42,3 +42,49 @@ def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_steps, s
     pairs_nb_section.add_line(Line(""))
     return pairs_nb_section
     
+
+def get_topB_pairs_parameters(topB, pairsB_minus_A, mapping):
+    topB_pairs_to_add = []
+    for pair in pairsB_minus_A:
+        idx1, idx2 = pair
+        topB_pairs_to_add.append(Line(f"{idx1} {idx2}  1")) 
+    return topB_pairs_to_add
+
+def updated_pairs_section(pairs_section, idx_i, topB_pairs_to_add):
+    new_pairs_section = Section("pairs")
+    residue_i_internal_pairs = []
+    pairs_involving_residue_i = []
+    for line in pairs_section.lines:
+        if line.tokens:
+            idx1, idx2 = int(line.tokens[0]), int(line.tokens[1])
+            if idx1 in idx_i and idx2 in idx_i:
+                residue_i_internal_pairs.append(line)
+            elif idx1 in idx_i or idx2 in idx_i:
+                pairs_involving_residue_i.append(line)
+            else:
+                new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]} 1 ; {' '.join(line.tokens[2:])}"))
+        elif line.raw.strip() == "":
+            pass
+        else:
+            new_pairs_section.add_line(line)
+
+    for line in residue_i_internal_pairs:
+        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]} 1 ; {' '.join(line.tokens[2:])}  internal pair for residue i"))
+    for line in pairs_involving_residue_i:
+        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]} 1 ; {' '.join(line.tokens[2:])}  pair involving residue i"))
+    
+    new_pairs_section.add_line(Line(f"#ifdef EDGE_3"))
+    for line in topB_pairs_to_add:
+        idx1, idx2, ftype = line.tokens[0], line.tokens[1], line.tokens[2]
+        new_pairs_section.add_line(Line(f"\t{idx1}  {idx2}  {ftype} ;  Top B pair"))
+    new_pairs_section.add_line(Line("#endif"))
+    new_pairs_section.add_line(Line(""))
+    return new_pairs_section
+
+def updated_atoms_section(atoms_section, idx_i):
+    new_atoms_section = Section("atoms")
+
+    for line in atoms_section.lines:
+        if line.tokens:
+            nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens
+    return new_atoms_section

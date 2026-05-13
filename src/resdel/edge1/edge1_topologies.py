@@ -3,7 +3,7 @@ from typing import Optional, List
 from resdel.tranformations.atom_mapping import build_atom_mapping
 from resdel.edge1.edge1_utils import *
 from resdel.edge1.pair_nb import Pair_nb_object
-from resdel.edge1.transformations_nonbonded import add_exclusions_section_to_topology, add_pairs_nb_section_to_topology
+from resdel.edge1.transformations_nonbonded import *
 from resdel.edge1.transformations_bonded import *
 
 class Edge1_Topologies:
@@ -81,15 +81,38 @@ class Edge1_Topologies:
         self.molA.add_section(add_exclusions_section_to_topology(sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B))))
         self.molA.add_section(add_pairs_nb_section_to_topology(self.pairsB_minus_A, self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
 
+        # Atoms section transformations
+        # ToDo; complete the following function (updated_atoms_section). 
+        #self.molA.replace_section("atoms", updated_atoms_section(self.molA.get_section("atoms"), idx_i))
+
+        # Pairs section transformations
+        print(f"Adding pairs from topology B that are not in A: {sorted(self.pairsB_minus_A)}")
+        topB_pairs_to_add = get_topB_pairs_parameters(self.topB, self.pairsB_minus_A, self.mapping)
+        self.molA.replace_section("pairs", updated_pairs_section(self.molA.get_section("pairs"), idx_i, topB_pairs_to_add))
+
+        # Bonds section transformations
         self.harmonic_bondsB_minus_A = map_bonds(extract_harmonic_bonds_from_topology(self.molB), self.mapping).difference(extract_harmonic_bonds_from_topology(self.molA))
         print(f"Bonds in topology B but not in A: {sorted(self.harmonic_bondsB_minus_A)}")
         assert(len(self.harmonic_bondsB_minus_A) == 1), "Error: There should be only one harmonic bond in topology B that is not present in topology A. "
         topB_bond_to_add = get_topB_bond_parameters(self.molB, self.harmonic_bondsB_minus_A, self.mapping)
-        print(f"Parameters of the new bond to add from topology B: {topB_bond_to_add.raw if topB_bond_to_add is not None else 'None'}")
+        print(f"Parameters of the new bond to add from topology B: {topB_bond_to_add if topB_bond_to_add is not None else 'None'}")
         
-        self.molA.replace_section("bonds", updated_bonds_section(self.molA.get_section("bonds").lines, topB_bond_to_add, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C))
-        
+        self.molA.replace_section("bonds", updated_bonds_section(self.molA.get_section("bonds"), topB_bond_to_add, idx_i, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C))
+        add_distance_restraint_for_new_bond(self.molA, topB_bond_to_add)
 
+        # Angles section transformations
+        self.anglesB_minus_A = extract_angles_from_topology(self.molB, self.mapping).difference(extract_angles_from_topology(self.molA))
+        topB_angles_to_add = get_topB_angles_parameters(self.molB, self.anglesB_minus_A, self.mapping)
+
+        self.molA.replace_section("angles", updated_angles_section(self.molA.get_section("angles"), idx_i, topB_angles_to_add))
+        print(f"Angles in topology B but not in A: {sorted(self.anglesB_minus_A)}")
+
+        # Dihedrals section transformations
+        self.dihedralsB_minus_A = extract_dihedrals_from_topology(self.molB, self.mapping).difference(extract_dihedrals_from_topology(self.molA))
+        topB_dihedrals_to_add = get_topB_dihedrals_parameters(self.molB, self.dihedralsB_minus_A, self.mapping)
+
+        self.molA.replace_section("dihedrals", updated_dihedrals_section(self.molA.get_section("dihedrals"), idx_i, topB_dihedrals_to_add))
+        print(f"Dihedrals in topology B but not in A: {sorted(self.dihedralsB_minus_A)}")
 
 
         topology_writer = Writer(self.topA, "./tests/data/test.top")
