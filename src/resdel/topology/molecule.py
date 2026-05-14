@@ -22,8 +22,6 @@ class Molecule:
                 self.sections[s] = new_section
                 return
         raise ValueError(f"Section with name {name} not found in molecule {self.name}")
-        return
-
 
 
     def __repr__(self):

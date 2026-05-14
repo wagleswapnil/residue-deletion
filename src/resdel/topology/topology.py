@@ -27,6 +27,13 @@ class Topology():
         for s in self.header:
             if s.name == name:
                 return s
+            
+    def replace_header_section_by_name(self, name: str, new_section: Section):
+        for s, section in enumerate(self.header):
+            if section.name == name:
+                self.header[s] = new_section
+                return
+        raise ValueError(f"Section with name {name} not found in topology header")
 
     def get_comb_rule_fudgeQQ(self):
         comb_rule = None

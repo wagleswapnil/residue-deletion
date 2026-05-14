@@ -81,10 +81,63 @@ def updated_pairs_section(pairs_section, idx_i, topB_pairs_to_add):
     new_pairs_section.add_line(Line(""))
     return new_pairs_section
 
-def updated_atoms_section(atoms_section, idx_i):
-    new_atoms_section = Section("atoms")
-
+def get_dual_state_atoms(molA, idx_i):
+    dual_state_atoms = []
+    atoms_section = molA.get_section("atoms")
     for line in atoms_section.lines:
         if line.tokens:
-            nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens
+            nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens[0:8]
+            if int(nr) in idx_i:
+                dual_state_atoms.append(dual_state_atom(nr, type, resnr, residue, atom, cgnr, charge, mass))
+    return dual_state_atoms
+
+def dual_state_atom(nr, type, resnr, residue, atom, cgnr, charge, mass):
+    if atom.startswith("H") or atom.startswith("O") or atom.startswith("N") or atom.startswith("S") or atom.startswith("C"):
+        return Line(f"\t{nr}\t{type}\t {resnr}\t {residue}\t {atom} \t{cgnr} \t{charge} \t{mass}  \tdum_{atom[0]}  \t0.0 \t {mass}; dual state atom")
+    else:
+        return Line(f"\t{nr}\t{type}\t {resnr}\t {residue}\t {atom} \t{cgnr} \t{charge} \t{mass}  \tdum_X  \t0.0 \t {mass}; dual state atom")
+
+def updated_atoms_section(atoms_section, idx_i, dual_state_atoms_to_add):
+    new_atoms_section = Section("atoms")
+    for line in atoms_section.lines:
+        if line.tokens:
+            nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens[0:8]
+            if int(nr) == min(idx_i):
+                new_atoms_section.add_line(Line(f"#ifdef EDGE_3"))
+                for dual_state_atom in dual_state_atoms_to_add:
+                    new_atoms_section.add_line(dual_state_atom)
+                new_atoms_section.add_line(Line(f"#else"))
+                new_atoms_section.add_line(line)
+            elif int(nr) == max(idx_i):
+                new_atoms_section.add_line(line)
+                new_atoms_section.add_line(Line(f"#endif"))
+            else:
+                new_atoms_section.add_line(line)
+        else:
+            new_atoms_section.add_line(line)
     return new_atoms_section
+
+def add_dummy_atomtypes_to_topology(atomtypes_section):
+    new_atomtypes_section = Section("atomtypes")
+    for line in atomtypes_section.lines:
+        if line.tokens:
+            new_atomtypes_section.add_line(line)
+    new_atomtypes_section.add_line(Line(f"dum_H     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line(f"dum_O     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line(f"dum_N     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line(f"dum_C     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line(f"dum_X     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line(""))
+    return new_atomtypes_section
+
+def edit_defaults_section(defaults_section):
+    new_defaults_section = Section("defaults")
+    for line in defaults_section.lines:
+        if line.tokens:
+            nbfunc, comb_rule, gen_pairs, fudgeLJ, fudgeQQ = line.tokens[0:5]
+            new_fudgeLJ = "0.5"
+            new_gen_pairs = "yes"
+            new_defaults_section.add_line(Line(f"{nbfunc} \t\t {comb_rule} \t\t {new_gen_pairs} \t\t {new_fudgeLJ}  \t\t{fudgeQQ}"))
+        else:
+            new_defaults_section.add_line(line)
+    return new_defaults_section

@@ -81,8 +81,16 @@ class Edge1_Topologies:
         self.molA.add_section(add_exclusions_section_to_topology(sorted(self.pairsB_minus_A.union(self.exclusionsB_minus_A).union(self.exclusions_temp_minus_A_B))))
         self.molA.add_section(add_pairs_nb_section_to_topology(self.pairsB_minus_A, self.exclusionsB_minus_A.union(self.exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
 
+        # Edit header sections if needed (e.g. adding dummy atom types and editing defaults section)
+        self.topA.replace_header_section_by_name("defaults", edit_defaults_section(self.topA.get_header_section_by_name("defaults")))
+        self.topA.replace_header_section_by_name("atomtypes", add_dummy_atomtypes_to_topology(self.topA.get_header_section_by_name("atomtypes")))
+
         # Atoms section transformations
-        # ToDo; complete the following function (updated_atoms_section). 
+        dual_state_atoms_to_add = get_dual_state_atoms(self.molA, idx_i)
+        self.molA.replace_section("atoms", updated_atoms_section(self.molA.get_section("atoms"), idx_i, dual_state_atoms_to_add))
+
+        
+
         #self.molA.replace_section("atoms", updated_atoms_section(self.molA.get_section("atoms"), idx_i))
 
         # Pairs section transformations
