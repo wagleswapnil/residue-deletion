@@ -188,7 +188,8 @@ def updated_dihedrals_section(dihedrals_section, idx_i, topB_dihedrals_to_add):
         idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), int(line.tokens[3]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
         new_dihedrals_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  {fc}  {multiplicity} {phi0}  0.0  {multiplicity} ; turning off dihedral involving residue i"))
     for line in topB_dihedrals_to_add:
-        new_dihedrals_section.add_line(Line(f"\t{line.raw} ; turning on Top B dihedral"))
+        idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), int(line.tokens[3]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
+        new_dihedrals_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  0.0  {multiplicity} {phi0}  {fc}  {multiplicity}  ; turning on Top B dihedral"))
     new_dihedrals_section.add_line(Line(f"#else"))
     for line in dihedrals_involving_residue_i:
         new_dihedrals_section.add_line(Line(f"\t{line.raw} ; dihedral involving residue i"))

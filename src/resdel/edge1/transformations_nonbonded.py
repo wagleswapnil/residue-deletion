@@ -69,9 +69,9 @@ def updated_pairs_section(pairs_section, idx_i, topB_pairs_to_add):
             new_pairs_section.add_line(line)
 
     for line in residue_i_internal_pairs:
-        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]} 1 ; {' '.join(line.tokens[2:])}  internal pair for residue i"))
+        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  internal pair for residue i"))
     for line in pairs_involving_residue_i:
-        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]} 1 ; {' '.join(line.tokens[2:])}  pair involving residue i"))
+        new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  pair involving residue i"))
     
     new_pairs_section.add_line(Line(f"#ifdef EDGE_3"))
     for line in topB_pairs_to_add:
@@ -120,7 +120,9 @@ def updated_atoms_section(atoms_section, idx_i, dual_state_atoms_to_add):
 def add_dummy_atomtypes_to_topology(atomtypes_section):
     new_atomtypes_section = Section("atomtypes")
     for line in atomtypes_section.lines:
-        if line.tokens:
+        if line.raw.strip() == "":
+            continue
+        else:
             new_atomtypes_section.add_line(line)
     new_atomtypes_section.add_line(Line(f"dum_H     0.000000     0.000000   A     0.000000     0.000000"))
     new_atomtypes_section.add_line(Line(f"dum_O     0.000000     0.000000   A     0.000000     0.000000"))

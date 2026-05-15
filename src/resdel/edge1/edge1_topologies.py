@@ -5,6 +5,7 @@ from resdel.edge1.edge1_utils import *
 from resdel.edge1.pair_nb import Pair_nb_object
 from resdel.edge1.transformations_nonbonded import *
 from resdel.edge1.transformations_bonded import *
+from resdel.topology.formatter import GromacsFormatter
 
 class Edge1_Topologies:
     def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
@@ -123,7 +124,7 @@ class Edge1_Topologies:
         print(f"Dihedrals in topology B but not in A: {sorted(self.dihedralsB_minus_A)}")
 
 
-        topology_writer = Writer(self.topA, "./tests/data/test.top")
+        topology_writer = Writer(self.topA, "./tests/data/test.top", formatter=GromacsFormatter())
         topology_writer.write_topology()
 
         print("Done")
