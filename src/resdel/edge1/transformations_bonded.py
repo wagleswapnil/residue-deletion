@@ -43,7 +43,7 @@ def extract_harmonic_bonds_from_topology(molecule):
                     bonds_set.add(tuple(sorted((idx1, idx2))))
     return sorted(bonds_set)
 
-def updated_bonds_section(bonds_section, topB_bond_to_add, idx_i, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C):
+def updated_bonds_section(bonds_section, topB_bond_to_add, idx_i, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N):
     new_bonds_section = Section("bonds")
     bond_i_minus_1_i = False
     bond_i_i_plus_1 = False

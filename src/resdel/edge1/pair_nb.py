@@ -13,7 +13,7 @@ class Pair_nb_object():
         self.stateB = stateB
         self.comb_rule = comb_rule
         self.fudge_QQ = float(fudge_QQ)
-        #breakpoint()
+        
         self.stateA_q1, self.stateA_q2 = self.calculate_state_charge(self.q1, self.q2, self.stateA)
         self.stateB_q1, self.stateB_q2 = self.calculate_state_charge(self.q1, self.q2, self.stateB)
         self.stateA_epsilon1 = self.calculate_state_epsilon(self.epsilon1, self.epsilon2, self.stateA)

@@ -87,34 +87,34 @@ def extract_exclusions_from_tpr_dump(tpr_dump_file, output_file, molecule_name :
                 buffer = line.strip()
                 collecting = True
                 if "}" in line:
-                    atom, nums = parse_excls_buffer(buffer)
+                    atom, nums = _parse_excls_buffer(buffer)
                     exclusions[atom] = nums
                     buffer = None
                     collecting = False
             elif collecting:
                 buffer += " " + line.strip()
                 if "}" in line:
-                    atom, nums = parse_excls_buffer(buffer)
+                    atom, nums = _parse_excls_buffer(buffer)
                     exclusions[atom] = nums
                     buffer = None
                     collecting = False
     f.close()
-    return make_exclusions_set(exclusions)
+    return _make_exclusions_set(exclusions)
 
-def parse_excls_buffer(buffer):
+def _parse_excls_buffer(buffer):
     pattern = r"excls\[(\d+)\]\[num=\d+\]=\{([^}]*)\}"
     match = re.search(pattern, buffer)
-    atom_index = make_exclusions_1_indexed(match.group(1))
-    nums_str = make_exclusions_1_indexed(match.group(2).strip().split(','))
+    atom_index = _make_exclusions_1_indexed(match.group(1))
+    nums_str = _make_exclusions_1_indexed(match.group(2).strip().split(','))
     return  atom_index, nums_str 
 
 
-def make_exclusions_1_indexed(num):
+def _make_exclusions_1_indexed(num):
     if isinstance(num, list):
         return [str(int(n) + 1) for n in num]
     return str(int(num) + 1)
 
-def make_exclusions_set(exclusions_dict):
+def _make_exclusions_set(exclusions_dict):
     exclusions_set = set()
     for key, value in exclusions_dict.items():
         #print(f"Processing atom {key} with exclusions {value}")
