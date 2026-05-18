@@ -1,12 +1,13 @@
 from resdel.topology import *
 from typing import Optional
-from resdel.tranformations.atom_mapping import build_atom_mapping
-from resdel.edge1.edge1_utils import *
-from resdel.edge1.transformations_nonbonded import *
-from resdel.edge1.transformations_bonded import *
+from resdel.transformations.atom_mapping import build_atom_mapping
+from resdel.transformations.transformations_utils import *
+from resdel.transformations.transformations_nonbonded import *
+from resdel.transformations.transformations_bonded import *
 from resdel.topology.formatter import GromacsFormatter
+from resdel.transformations.tpr_object import TPR_Object
 
-class Edge1_Topologies:
+class TopologyTransformer:
     def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
         self.topA = topA
         self.topB = topB
@@ -37,39 +38,74 @@ class Edge1_Topologies:
         self.sigma_epsilon_charges = get_sigma_epsilon_charges(self.topA.get_header_section_by_name("atomtypes"), self.molA, self.idx_i_minus_1 + self.idx_i + self.idx_i_plus_1)
         return 
 
+    def compute_pairs(self):
+        self.pairsA = extract_pairs_from_topology(self.topA, self.molA_name)
+        self.pairsB = map_exclusions_pairs(extract_pairs_from_topology(self.topB, self.molB_name), self.mapping)
+        self.pairsB_minus_A = self.pairsB.difference(self.pairsA)
+        return
 
-    def compute_pairs_exclusions(self):
-        get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/system_stage1.top", output_prefix="./tests/data/system_stage1")
-        output_prefix="./tests/data/system_stage1"
-        exclusionsA = extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
-        pairsA = extract_pairs_from_topology(self.topA, self.molA_name)
-        assert(pairsA.issubset(exclusionsA)), "Error: Not all pairs in topology A are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
-        
-        add_peptide_bond(self.molA, self.idx_i_minus_1_C, self.idx_i_plus_1_N)
-        topology_writer = Writer(self.topA, "./tests/data/test.top")
-        topology_writer.write_topology()
-        get_tpr_dump(mdp="./tests/MDP/em_test.mdp", structure="./tests/data/minimized_stage1.gro", topology="./tests/data/test.top", output_prefix="./tests/data/test")
-        output_prefix="./tests/data/test"
-        exclusions_temp = extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt")
-        
-        get_tpr_dump(mdp="./tests/MDP/em.mdp", structure="./tests/data/minimized_stage5.gro", topology="./tests/data/system_stage5.top", output_prefix="./tests/data/system_stage5")
-        output_prefix="./tests/data/system_stage5"
-        exclusionsB = map_exclusions_pairs(extract_exclusions_from_tpr_dump(f"{output_prefix}.txt", f"{output_prefix}_exclusions.txt"), self.mapping)
-        pairsB = map_exclusions_pairs(extract_pairs_from_topology(self.topB, self.molB_name), self.mapping)
-        assert(pairsB.issubset(exclusionsB)), "Error: Not all pairs in topology B are present in the exclusions extracted from the tpr dump. This is not supposed to happen."
-        return exclusionsA, pairsA, exclusions_temp, exclusionsB, pairsB
+    def _extract_exclusions_from_tpr(self, topology, structure, output_prefix, molecule_name, mdp : Optional[str] = None):
+        tpr = TPR_Object(topology, structure, mdp)
+        tpr.make_tpr_dump(output_prefix)
+        exclusions = tpr.extract_exclusions_from_tpr_dump(molecule_name)
+        return exclusions
     
-    def compute_pairs_exclusions_to_add(self):
-        exclusionsA, pairsA, exclusions_temp, exclusionsB, pairsB = self.compute_pairs_exclusions()
-        pairsB_minus_A = pairsB.difference(pairsA)
-        exclusionsB_minus_A = exclusionsB.difference(exclusionsA).difference(pairsB_minus_A)
+    def _validate_pairs_subset(self, pairs, exclusions, topology_name):
+        if not pairs.issubset(exclusions):
+            raise ValueError(f"Error: Not all pairs in topology {topology_name} are present in the exclusions extracted from the tpr dump. This is not supposed to happen.")
+        return
+
+
+    def compute_exclusions(self):
+        exclusionsA = self._extract_exclusions_from_tpr(
+            structure = "./tests/data/minimized_stage1.gro",
+            topology = "./tests/data/system_stage1.top",
+            output_prefix="./tests/data/system_stage1",
+            molecule_name=self.molA_name,
+            mdp="./tests/MDP/em.mdp"
+        )
+
+        self._validate_pairs_subset(self.pairsA, exclusionsA, "A")
+
+        add_peptide_bond(self.molA, self.idx_i_minus_1_C, self.idx_i_plus_1_N)
+            
+        topology = "./tests/data/test.top"
+        topology_writer = Writer(self.topA, topology, formatter=GromacsFormatter())
+        topology_writer.write_topology()
+
+        exclusions_temp = self._extract_exclusions_from_tpr(
+            structure = "./tests/data/minimized_stage1.gro",
+            topology=topology,
+            output_prefix="./tests/data/test",
+            molecule_name=self.molA_name,
+            mdp="./tests/MDP/em_test.mdp"
+        )
+        
+        exclusionsB = self._extract_exclusions_from_tpr(
+            structure="./tests/data/minimized_stage5.gro",
+            topology="./tests/data/system_stage5.top",
+            output_prefix="./tests/data/system_stage5",
+            molecule_name=self.molB_name,
+            mdp="./tests/MDP/em.mdp"
+        )
+
+        exclusionsB = map_exclusions_pairs(exclusionsB, self.mapping)
+
+        self._validate_pairs_subset(self.pairsB, exclusionsB, "B")
+
+        return exclusionsA, exclusions_temp, exclusionsB
+    
+    def compute_pairs_nb_exclusions_to_add(self):
+        self.compute_pairs()
+        exclusionsA, exclusions_temp, exclusionsB = self.compute_exclusions()
+        exclusionsB_minus_A = exclusionsB.difference(exclusionsA).difference(self.pairsB_minus_A)
         exclusions_temp_minus_A_B = exclusions_temp.difference(exclusionsA).difference(exclusionsB)
-        return pairsB_minus_A, exclusionsB_minus_A, exclusions_temp_minus_A_B
+        return exclusionsB_minus_A, exclusions_temp_minus_A_B
     
     def add_pairs_nb_exclusions_to_topology(self):
-        pairsB_minus_A, exclusionsB_minus_A, exclusions_temp_minus_A_B = self.compute_pairs_exclusions_to_add()
-        self.molA.add_section(add_exclusions_section_to_topology(sorted(pairsB_minus_A.union(exclusionsB_minus_A).union(exclusions_temp_minus_A_B))))
-        self.molA.add_section(add_pairs_nb_section_to_topology(pairsB_minus_A, exclusionsB_minus_A.union(exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
+        exclusionsB_minus_A, exclusions_temp_minus_A_B = self.compute_pairs_nb_exclusions_to_add()
+        self.molA.add_section(add_exclusions_section_to_topology(sorted(self.pairsB_minus_A.union(exclusionsB_minus_A).union(exclusions_temp_minus_A_B))))
+        self.molA.add_section(add_pairs_nb_section_to_topology(self.pairsB_minus_A, exclusionsB_minus_A.union(exclusions_temp_minus_A_B), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
         return
     
     def edit_header_sections(self):
@@ -80,14 +116,14 @@ class Edge1_Topologies:
     def compute_dual_atoms(self):
         dual_state_atoms_to_add = get_dual_state_atoms(self.molA, self.idx_i)
         return dual_state_atoms_to_add
-    
+
     def compute_pairs_to_add(self):
         topB_pairs_to_add = get_topB_pairs_parameters(self.topB, self.pairsB_minus_A, self.mapping)
         return topB_pairs_to_add
-
+    
     def compute_bonds_to_transform(self):
         harmonic_bondsB_minus_A = map_bonds(extract_harmonic_bonds_from_topology(self.molB), self.mapping).difference(extract_harmonic_bonds_from_topology(self.molA))
-        assert(len(self.harmonic_bondsB_minus_A) == 1), "Error: There should be only one harmonic bond in topology B that is not present in topology A. "
+        assert(len(harmonic_bondsB_minus_A) == 1), "Error: There should be only one harmonic bond in topology B that is not present in topology A. "
         topB_bond_to_add = get_topB_bond_parameters(self.molB, harmonic_bondsB_minus_A, self.mapping)
         return topB_bond_to_add
 
@@ -120,7 +156,7 @@ class Edge1_Topologies:
     
     def write_topology_output(self):
         output_file = "tests/data/test.top"
-        writer = Writer(topology=self.topA, file_path=output_file)
+        writer = Writer(topology=self.topA, file_path=output_file, formatter=GromacsFormatter())
         writer.write_topology()
         return
     

@@ -1,5 +1,5 @@
 from resdel.topology import *
-from resdel.edge1.pair_nb import Pair_nb_object
+from resdel.transformations.pair_nb import Pair_nb_object
 
 def add_exclusions_section_to_topology(exclusions_list):
     exclusions_dict = {}
@@ -29,7 +29,7 @@ def get_pairs_nb_objects(pairs_list, exclusions_list, edge1_steps, sigma_epsilon
 def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_steps, sigma_epsilon_charges, comb_rule, fudge_QQ):
     pairs_nb_list = get_pairs_nb_objects(pairs_list, exclusions_list, edge1_steps, sigma_epsilon_charges, comb_rule, fudge_QQ)
     pairs_nb_section = Section("pairs_nb")
-    for step in range(0, edge1_steps):
+    for step in range(0, edge1_steps + 1):
         pairs_nb_section.add_line(Line(f"#ifdef EDGE1_STEP{step}"))
         for pair_nb in pairs_nb_list:
             pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / edge1_steps))

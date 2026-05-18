@@ -1,7 +1,7 @@
 import math
 
 from resdel.topology import Line
-from typing import List, Optional
+from typing import Optional
 
 class Pair_nb_object():
     def __init__(self, x, value1, value2, stateA : Optional[str] = "full_interactions", stateB : Optional[str] = "no_interactions", comb_rule : Optional[str] = 2, fudge_QQ : Optional[str] = 1):

@@ -1,5 +1,5 @@
 from resdel.topology import *
-from typing import Optional, List
+from typing import Optional
 from .calculate_bond_distances import get_min_max_distances
 
 def add_peptide_bond(mol, idx_i_minus_1_C, idx_i_plus_1_N):
