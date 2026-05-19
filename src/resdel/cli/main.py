@@ -1,12 +1,27 @@
 import typer
 
+from resdel.config.loader import load_config
+
 from resdel.topology.parser import Parser
 from resdel.transformations.topology_transformer import TopologyTransformer
 
 app = typer.Typer()
 
+
 @app.command()
-def transform(
+def prepare(config_file: str):
+    typer.echo(f"Preparing system using {config_file}")
+
+
+@app.command()
+def transform(config_file: str):
+
+    config = load_config(config_file)
+    typer.echo(
+        f"Running transformation for "
+        f"{config.system.name}"
+    )
+    """
     topA: str,
     topB: str,
     residue: int,
@@ -28,8 +43,9 @@ def transform(
     )
 
     transformer.generate_resdel_topology()
-
+    """
     typer.echo("Topology transformation complete.")
+
 
 
 if __name__ == "__main__":

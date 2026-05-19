@@ -1,0 +1,39 @@
+system:
+  name: GAG_to_GG
+  sequence: "GAG"
+  residue_to_delete: 2
+
+
+io:
+  working_dir: 
+  input_mdp_dir:
+  output_dir:
+  output_prefix:
+  log:
+  error:
+
+
+prepare:
+  GMX_executable:
+  forcefield:
+  water_model:
+
+transform:
+  molecule_name:
+  number_of_lambdas: 15
+  lambda_vector:
+  vdw_lambda_vector:
+  coul_lambda_vector:
+  states:
+    A:
+      topology:
+      structure:
+      molecule_name:
+    B:
+      topology:
+      structure:
+      molecule_name:
+
+
+
+
