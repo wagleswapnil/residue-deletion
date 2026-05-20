@@ -1,17 +1,15 @@
 system:
   name: GAG_to_GG
-  sequence: "GAG"
-  residue_to_delete: 2
-
+  sequence: "ACE-GLY-ALA-GLY-NME"
+  residue_to_delete: 3 
 
 io:
   working_dir: 
   input_mdp_dir:
   output_dir:
   output_prefix:
-  log:
-  error:
-
+  log_file: 
+  error_file:
 
 prepare:
   GMX_executable:
@@ -33,7 +31,3 @@ transform:
       topology:
       structure:
       molecule_name:
-
-
-
-

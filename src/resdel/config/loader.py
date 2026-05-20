@@ -5,6 +5,7 @@ from resdel.config.models import (
     IOConfig,
     StateConfig,
     SystemConfig,
+    PrepareConfig,
     TransformConfig
 )
 
@@ -12,9 +13,10 @@ from resdel.config.models import (
 def load_config(config_file: str) -> Config:
     with open(config_file) as f:
         raw = yaml.safe_load(f)
-
+    
     system = SystemConfig(**raw["system"])
     io = IOConfig(**raw["io"])
+    prepare = PrepareConfig(**raw["prepare"])
     states = {
         name: StateConfig(**state)
         for name, state in raw["transform"]["states"].items()
@@ -22,8 +24,10 @@ def load_config(config_file: str) -> Config:
     transform_data = raw["transform"].copy()
     transform_data["states"] = states
     transform = TransformConfig(**transform_data)
+    
     return Config(
         system=system,
         io=io,
+        prepare=prepare,
         transform=transform
     )

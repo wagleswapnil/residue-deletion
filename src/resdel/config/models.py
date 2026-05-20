@@ -13,12 +13,20 @@ class IOConfig:
     input_mdp_dir: Optional[str]
     output_dir: Optional[str]
     output_prefix: Optional[str]
+    log_file: Optional[str]
+    error_file: Optional[str]
+
+@dataclass
+class PrepareConfig:
+    GMX_executable: Optional[str]
+    forcefield: Optional[str]
+    water_model: Optional[str]
 
 @dataclass
 class StateConfig:
-    topology: str
-    structrue: str
-    moleucle_name: str
+    topology: Optional[str]
+    structure: Optional[str]
+    molecule_name: Optional[str]
 
 @dataclass
 class TransformConfig:
@@ -33,5 +41,6 @@ class TransformConfig:
 class Config:
     system: SystemConfig
     io: IOConfig
+    prepare: PrepareConfig
     transform: TransformConfig
 
