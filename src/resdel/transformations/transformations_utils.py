@@ -16,7 +16,7 @@ def get_residue_atom_idxs(mol, residue_to_delete):
             atom_idx = line.tokens[0]
             resnr = line.tokens[2]
             atom_name = line.tokens[4]
-            if resnr == residue_to_delete:
+            if int(resnr) == residue_to_delete:
                 idx_i.append(int(atom_idx))
                 if atom_name == "C":
                     idx_i_C = int(atom_idx)
@@ -34,6 +34,7 @@ def get_residue_atom_idxs(mol, residue_to_delete):
                     idx_i_plus_1_N = int(atom_idx)
                 elif atom_name == "C":
                     idx_i_plus_1_C = int(atom_idx)
+    #breakpoint()
     if idx_i_minus_1_C is None or idx_i_plus_1_N is None or idx_i_C is None or idx_i_N is None or idx_i_minus_1_N is None or idx_i_plus_1_C is None:
         raise ValueError("Could not find all required atoms in the specified residues. This is not supposed to happen.")
     return idx_i_minus_1, idx_i, idx_i_plus_1, idx_i_minus_1_N, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N,  idx_i_plus_1_C

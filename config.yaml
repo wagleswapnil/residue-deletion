@@ -1,12 +1,12 @@
 system:
-  name: GAG_to_GG
+  name: GAG_GG
   sequence: "ACE-GLY-ALA-GLY-NME"
   residue_to_delete: 3 
 
 io:
   working_dir: 
   input_mdp_dir:
-  output_dir:
+  output_dir: resdel_output
   output_prefix:
   log_file: 
   error_file:

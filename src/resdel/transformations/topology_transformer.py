@@ -8,15 +8,19 @@ from resdel.topology.formatter import GromacsFormatter
 from resdel.transformations.tpr_object import TPR_Object
 
 class TopologyTransformer:
-    def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
+    #def __init__(self, topA : Topology, topB : Topology, residue_to_delete : str, molA_name : Optional[str] = "system1", molB_name : Optional[str] = "system1", edge1_steps : Optional[int] = 15):
+    def __init__(self, topA: Topology, topB: Topology, config, paths):
         self.topA = topA
         self.topB = topB
-        self.edge1_steps = edge1_steps
-        self.residue_to_delete = residue_to_delete
+        self.config = config
+        self.paths = paths
+        self.edge1_steps = self.config.transform.number_of_lambdas
+        self.residue_to_delete = self.config.system.residue_to_delete
         self.molA = None
         self.molB = None
-        self.molA_name = molA_name
-        self.molB_name = molB_name
+        self.molA_name = (config.transform.molecule_name or "system1")
+        self.molB_name = (config.transform.molecule_name or "system1")
+        self.config = config
         for mol in self.topA.molecules:
             if mol.name == self.molA_name:
                 self.molA = mol
@@ -52,14 +56,15 @@ class TopologyTransformer:
     
     def _validate_pairs_subset(self, pairs, exclusions, topology_name):
         if not pairs.issubset(exclusions):
+            breakpoint()
             raise ValueError(f"Error: Not all pairs in topology {topology_name} are present in the exclusions extracted from the tpr dump. This is not supposed to happen.")
         return
 
 
     def compute_exclusions(self):
         exclusionsA = self._extract_exclusions_from_tpr(
-            structure = "./tests/data/minimized_stage1.gro",
-            topology = "./tests/data/system_stage1.top",
+            structure = self.paths.structure_PDBfile("wt"),
+            topology = self.paths.topology_file("wt"),
             output_prefix="./tests/data/system_stage1",
             molecule_name=self.molA_name,
             mdp="./tests/MDP/em.mdp"
@@ -74,7 +79,7 @@ class TopologyTransformer:
         topology_writer.write_topology()
 
         exclusions_temp = self._extract_exclusions_from_tpr(
-            structure = "./tests/data/minimized_stage1.gro",
+            structure = self.paths.structure_PDBfile("wt"),
             topology=topology,
             output_prefix="./tests/data/test",
             molecule_name=self.molA_name,
@@ -82,8 +87,8 @@ class TopologyTransformer:
         )
         
         exclusionsB = self._extract_exclusions_from_tpr(
-            structure="./tests/data/minimized_stage5.gro",
-            topology="./tests/data/system_stage5.top",
+            structure=self.paths.structure_PDBfile("mutant"),
+            topology=self.paths.topology_file("mutant"),
             output_prefix="./tests/data/system_stage5",
             molecule_name=self.molB_name,
             mdp="./tests/MDP/em.mdp"
@@ -154,8 +159,7 @@ class TopologyTransformer:
         self.molA.replace_section("dihedrals", updated_dihedrals_section(self.molA.get_section("dihedrals"), self.idx_i, self.compute_dihedrals_to_add()))
         return
     
-    def write_topology_output(self):
-        output_file = "tests/data/test.top"
+    def write_topology_output(self, output_file):
         writer = Writer(topology=self.topA, file_path=output_file, formatter=GromacsFormatter())
         writer.write_topology()
         return
@@ -165,7 +169,7 @@ class TopologyTransformer:
         self.add_pairs_nb_exclusions_to_topology()
         self.edit_header_sections()
         self.replace_topology_sections()
-        self.write_topology_output()
+        #self.write_topology_output()
         return
 
 

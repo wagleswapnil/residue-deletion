@@ -14,22 +14,22 @@ class PeptideSystemBuilder:
     def __init__(self, sequence, residue_to_delete):
         self.sequence = sequence
         self.residue_to_delete = int(residue_to_delete)
-        self.full_sequence, self.mutated_sequence = self._get_indexed_sequences()
+        self.wt_sequence, self.mutant_sequence = self._get_indexed_sequences()
 
 
     def generate_wt_peptide_structure(self, output_path):
-        self.generate_structure_from_sequence(self.full_sequence, output_path)
+        self.generate_structure_from_sequence(self.wt_sequence, output_path)
         return
 
 
     def generate_mutant_structure(self, output_path):
-        self.generate_structure_from_sequence(self.mutated_sequence, output_path)
+        self.generate_structure_from_sequence(self.mutant_sequence, output_path)
         return
 
-    def generate_topology_from_structure(self, structure_path):
+    def generate_topology_from_structure(self, structure_path, topology_path):
         pmd_receptor_struct = create_receptor_system(structure_path)
-        pmd_receptor_struct.save("output1.pdb", overwrite=True)
-        pmd_receptor_struct.save("output1.top", overwrite=True)
+        pmd_receptor_struct.save(structure_path, overwrite=True)
+        pmd_receptor_struct.save(topology_path, overwrite=True)
         return
 
 
@@ -57,23 +57,22 @@ class PeptideSystemBuilder:
 
         pdbwriter = PDBIO()
         pdbwriter.set_structure(structure)
-        pdbwriter.save(output_path)
+        pdbwriter.save(str(output_path))
         return
 
 
-
     def _get_indexed_sequences(self):
-        full_sequence = None
-        mutated_sequence = None
+        wt_sequence = None
+        mutant_sequence = None
         if self.sequence.isalpha():
-            full_sequence = list(self.sequence)
-            mutated_sequence = list(self.sequence[:self.residue_to_delete] + self.sequence[self.residue_to_delete :])
+            wt_sequence = list(self.sequence)
+            mutant_sequence = list(self.sequence[:self.residue_to_delete] + self.sequence[self.residue_to_delete :])
         else:
             sequence = re.split(r'[^`\=-~!@#$%^&*()_+\[\]{};\'\\:"|<,./<>?]', self.sequence)
-            full_sequence = [s for s in sequence]
-            mutated_sequence = full_sequence[:self.residue_to_delete - 1] + full_sequence[self.residue_to_delete :]
+            wt_sequence = [s for s in sequence]
+            mutant_sequence = wt_sequence[:self.residue_to_delete - 1] + wt_sequence[self.residue_to_delete :]
         print(self.sequence)
-        return full_sequence, mutated_sequence
+        return wt_sequence, mutant_sequence
 
 
 
