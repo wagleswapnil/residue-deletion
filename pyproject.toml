@@ -7,7 +7,7 @@ name = "resdel"
 version = "0.1.0"
 description = "Tools for manipulating GROMACS topologies"
 requires-python = ">=3.10"
-dependencies = ["typer", "pyyaml", "openmm", "ParmEd"]
+dependencies = ["typer", "pyyaml", "openmm", "ParmEd", "pdb-tools"]
 
 [project.scripts]
 resdel="resdel.cli.main:app"

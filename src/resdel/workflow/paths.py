@@ -11,11 +11,20 @@ class OutputPaths:
         path.mkdir(exist_ok=True)
         return path
 
+
+    def subdir(self, dirname):
+        path = self.root / dirname
+        path.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+        return path
+
     def topology_file(self, stage_name):
-        return self.stage_dir(stage_name) / "system.top"
+        return self.subdir(stage_name) / "system.top"
     
     def structure_PDBfile(self, stage_name):
-        return self.stage_dir(stage_name) / "system.pdb"
+        return self.subdir(stage_name) / "system.pdb"
 
     def structure_GROfile(self, stage_name):
         return self.stage_dir(stage_name) / "system.gro"

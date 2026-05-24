@@ -35,6 +35,25 @@ class Topology():
                 return
         raise ValueError(f"Section with name {name} not found in topology header")
 
+    def remove_molecule_by_name(self, name: str):
+        for i, molecule in enumerate(self.molecules):
+            if molecule.name == name:
+                del self.molecules[i]
+                return
+        
+    def get_tail_section_by_name(self, name: str):
+        name = name.lower()
+        for s in self.tail:
+            if s.name == name:
+                return s
+
+    def replace_tail_section_by_name(self, name: str, new_section: Section):
+        for i, section in enumerate(self.tail):
+            if section.name == name:
+                self.tail[i] = new_section
+                return
+        raise ValueError(f"Section with name {name} not found in topology tail")
+
     def get_comb_rule_fudgeQQ(self):
         comb_rule = None
         fudgeQQ = None
