@@ -1,0 +1,13 @@
+configfile: "config.yaml"
+
+REPLICAS = range(config["simulation"]["replicas"])
+
+include: "rules/convert.smk"
+#include: "rules/minimize.smk"
+#include: "rules/equilibration.smk"
+#include: "rules/production.smk"
+
+
+rule all:
+    input:
+        "output/system.gro"

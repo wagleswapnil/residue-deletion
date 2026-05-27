@@ -63,8 +63,8 @@ class TopologyTransformer:
 
     def compute_exclusions(self):
         exclusionsA = self._extract_exclusions_from_tpr(
-            structure = self.paths.structure_PDBfile("wt"),
-            topology = self.paths.topology_file("wt"),
+            structure = self.paths.structure_PDBfile("wt/solvated"),
+            topology = self.paths.topology_file("wt/solvated"),
             output_prefix="./tests/data/system_stage1",
             molecule_name=self.molA_name,
             mdp="./tests/MDP/em.mdp"
@@ -79,7 +79,7 @@ class TopologyTransformer:
         topology_writer.write_topology()
 
         exclusions_temp = self._extract_exclusions_from_tpr(
-            structure = self.paths.structure_PDBfile("wt"),
+            structure = self.paths.structure_PDBfile("wt/solvated"),
             topology=topology,
             output_prefix="./tests/data/test",
             molecule_name=self.molA_name,
@@ -87,8 +87,8 @@ class TopologyTransformer:
         )
         
         exclusionsB = self._extract_exclusions_from_tpr(
-            structure=self.paths.structure_PDBfile("mutant"),
-            topology=self.paths.topology_file("mutant"),
+            structure=self.paths.structure_PDBfile("mutant/solvated"),
+            topology=self.paths.topology_file("mutant/solvated"),
             output_prefix="./tests/data/system_stage5",
             molecule_name=self.molB_name,
             mdp="./tests/MDP/em.mdp"
