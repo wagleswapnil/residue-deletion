@@ -64,9 +64,10 @@ class Pair_nb_object():
     def get_pair_nb_line(self, multiplication_factor : Optional[float] = 0):
         q1 = self.stateA_q1 * (1 - multiplication_factor) + self.stateB_q1 * multiplication_factor
         q2 = self.stateA_q2 * (1 - multiplication_factor) + self.stateB_q2 * multiplication_factor
+        ftype = "1"
         sigma = self.stateA_sigma1 * (1 - multiplication_factor) + self.stateB_sigma2 * multiplication_factor
         epsilon = self.stateA_epsilon1 * (1 - multiplication_factor) + self.stateB_epsilon2 * multiplication_factor
-        return Line(f"{self.idx1}\t{self.idx2}\t{q1:.6f} \t{q2:.6f}\t {sigma:.6f}\t {epsilon:.6f}")
+        return Line(f"{self.idx1}\t{self.idx2}\t{ftype}\t{q1:.6f} \t{q2:.6f}\t {sigma:.6f}\t {epsilon:.6f}")
 
     def __repr__(self):
         return f"Pair_nb_object(idx1={self.idx1}, idx2={self.idx2}, stateA={self.stateA}, stateB={self.stateB}, stateA_q1={self.stateA_q1}, stateA_q2={self.stateA_q2}, stateB_q1={self.stateB_q1}, stateB_q2={self.stateB_q2}, stateA_epsilon1={self.stateA_epsilon1}, stateB_epsilon2={self.stateB_epsilon2}, stateA_sigma1={self.stateA_sigma1}, stateB_sigma2={self.stateB_sigma2})"

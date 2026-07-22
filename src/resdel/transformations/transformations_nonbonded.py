@@ -43,14 +43,14 @@ def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_steps, s
     return pairs_nb_section
     
 
-def get_topB_pairs_parameters(topB, pairsB_minus_A, mapping):
-    topB_pairs_to_add = []
-    for pair in pairsB_minus_A:
+def get_top_mutant_pairs_parameters(top_mutant, pairs_mutant_minus_wt, mapping):
+    top_mutant_pairs_to_add = []
+    for pair in pairs_mutant_minus_wt:
         idx1, idx2 = pair
-        topB_pairs_to_add.append(Line(f"{idx1} {idx2}  1")) 
-    return topB_pairs_to_add
+        top_mutant_pairs_to_add.append(Line(f"{idx1} {idx2}  1")) 
+    return top_mutant_pairs_to_add
 
-def updated_pairs_section(pairs_section, idx_i, topB_pairs_to_add):
+def updated_pairs_section(pairs_section, idx_i, top_mutant_pairs_to_add):
     new_pairs_section = Section("pairs")
     residue_i_internal_pairs = []
     pairs_involving_residue_i = []
@@ -68,28 +68,41 @@ def updated_pairs_section(pairs_section, idx_i, topB_pairs_to_add):
         else:
             new_pairs_section.add_line(line)
 
+    new_pairs_section.add_line(Line(f"#ifdef INTERNAL_I_PAIRS"))
     for line in residue_i_internal_pairs:
         new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  internal pair for residue i"))
+    new_pairs_section.add_line(Line(f"#endif"))
+
+    new_pairs_section.add_line(Line(f"#ifdef PAIRS_RES_I"))
     for line in pairs_involving_residue_i:
         new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  pair involving residue i"))
+    new_pairs_section.add_line(Line(f"#endif"))
     
-    new_pairs_section.add_line(Line(f"#ifdef EDGE_3"))
-    for line in topB_pairs_to_add:
+    new_pairs_section.add_line(Line(f"#ifdef NEW_PAIRS"))
+    for line in top_mutant_pairs_to_add:
         idx1, idx2, ftype = line.tokens[0], line.tokens[1], line.tokens[2]
         new_pairs_section.add_line(Line(f"\t{idx1}  {idx2}  {ftype} ;  Top B pair"))
     new_pairs_section.add_line(Line("#endif"))
     new_pairs_section.add_line(Line(""))
     return new_pairs_section
 
-def get_dual_state_atoms(molA, idx_i):
+def get_dual_state_atoms(mol_wt, idx_i):
     dual_state_atoms = []
-    atoms_section = molA.get_section("atoms")
+    dummy_res_i_atoms = []
+    atoms_section = mol_wt.get_section("atoms")
     for line in atoms_section.lines:
         if line.tokens:
             nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens[0:8]
             if int(nr) in idx_i:
                 dual_state_atoms.append(dual_state_atom(nr, type, resnr, residue, atom, cgnr, charge, mass))
-    return dual_state_atoms
+                dummy_res_i_atoms.append(dummy_atom(nr, type, resnr, residue, atom, cgnr, charge, mass))
+    return dual_state_atoms, dummy_res_i_atoms
+
+def dummy_atom(nr, type, resnr, residue, atom, cgnr, charge, mass):
+    if atom.startswith("H") or atom.startswith("O") or atom.startswith("N") or atom.startswith("S") or atom.startswith("C"):
+        return Line(f"\t{nr}\tdum_{atom[0]} \t {resnr}\t {residue}\t {atom} \t{cgnr} \t0.0 \t{mass} ; dummy res i atom")
+    else:
+        return Line(f"\t{nr}\tdum_X \t {resnr}\t {residue}\t {atom} \t{cgnr} \t0.0 \t{mass} ; dummy res i atom")
 
 def dual_state_atom(nr, type, resnr, residue, atom, cgnr, charge, mass):
     if atom.startswith("H") or atom.startswith("O") or atom.startswith("N") or atom.startswith("S") or atom.startswith("C"):
@@ -97,16 +110,21 @@ def dual_state_atom(nr, type, resnr, residue, atom, cgnr, charge, mass):
     else:
         return Line(f"\t{nr}\t{type}\t {resnr}\t {residue}\t {atom} \t{cgnr} \t{charge} \t{mass}  \tdum_X  \t0.0 \t {mass}; dual state atom")
 
-def updated_atoms_section(atoms_section, idx_i, dual_state_atoms_to_add):
+def updated_atoms_section(atoms_section, idx_i, dual_state_atoms_to_add, dummy_atoms_to_add):
     new_atoms_section = Section("atoms")
     for line in atoms_section.lines:
         if line.tokens:
             nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens[0:8]
             if int(nr) == min(idx_i):
-                new_atoms_section.add_line(Line(f"#ifdef EDGE_3"))
+                new_atoms_section.add_line(Line(f"#ifdef DUAL_STATE_ATOMS"))
                 for dual_state_atom in dual_state_atoms_to_add:
                     new_atoms_section.add_line(dual_state_atom)
-                new_atoms_section.add_line(Line(f"#else"))
+                new_atoms_section.add_line(Line(f"#endif"))
+                new_atoms_section.add_line(Line(f"#ifdef DUMMY_RES_I_ATOMS"))
+                for dummy_atom in dummy_atoms_to_add:
+                    new_atoms_section.add_line(dummy_atom)
+                new_atoms_section.add_line(Line(f"#endif"))
+                new_atoms_section.add_line(Line(f"#ifdef REAL_RES_I_ATOMS"))
                 new_atoms_section.add_line(line)
             elif int(nr) == max(idx_i):
                 new_atoms_section.add_line(line)

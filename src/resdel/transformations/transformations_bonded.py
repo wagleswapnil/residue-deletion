@@ -2,8 +2,8 @@ from resdel.topology import *
 from typing import Optional
 from .calculate_bond_distances import get_min_max_distances
 
-def add_peptide_bond(mol, idx_i_minus_1_C, idx_i_plus_1_N):
-    line = Line(f"#ifdef NEW_PEPTIDE_BOND")
+def add_fc0_bond(mol, idx_i_minus_1_C, idx_i_plus_1_N):
+    line = Line(f"#ifdef NEW_FC0_BOND")
     mol.get_section("bonds").add_line(line)
     line = Line(f"\t{idx_i_minus_1_C} \t{idx_i_plus_1_N} \t 5")
     mol.get_section("bonds").add_line(line)
@@ -11,16 +11,22 @@ def add_peptide_bond(mol, idx_i_minus_1_C, idx_i_plus_1_N):
     mol.get_section("bonds").add_line(line)
     return
 
-def add_distance_restraint_for_new_bond(mol, topB_bond_to_add):
+def add_new_bond(mol, top_mutant_bond_to_add):
     restr_ftype = "10"
     restr_rmax = None
-    if topB_bond_to_add is not None:
-        idx1, idx2, r0, fc = topB_bond_to_add.tokens[0], topB_bond_to_add.tokens[1], topB_bond_to_add.tokens[3], topB_bond_to_add.tokens[4]
+    if top_mutant_bond_to_add is not None:
+        idx1, idx2, r0, fc = top_mutant_bond_to_add.tokens[0], top_mutant_bond_to_add.tokens[1], top_mutant_bond_to_add.tokens[3], top_mutant_bond_to_add.tokens[4]
         line = Line(f"#ifdef NEW_DIST_RESTR")
         mol.get_section("bonds").add_line(line)
         min_d, max_d = get_min_max_distances(idx1, idx2)
         restr_rmax = max_d + 1.0
         line = Line(f"\t{idx1}  {idx2} {restr_ftype}  {min_d}  {max_d}  {restr_rmax}  {fc}  {r0} {r0}  {restr_rmax}  {fc} ; Distance restraint for the new bond between atoms {idx1} and {idx2}")
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"#endif")
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"#ifdef NEW_PEPTIDE_BOND")
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"\t{idx1}  {idx2} 1  {r0}  {fc} ; i-1 to i+1 peptide bond")
         mol.get_section("bonds").add_line(line)
         line = Line(f"#endif")
         mol.get_section("bonds").add_line(line)
@@ -43,7 +49,7 @@ def extract_harmonic_bonds_from_topology(molecule):
                     bonds_set.add(tuple(sorted((idx1, idx2))))
     return sorted(bonds_set)
 
-def updated_bonds_section(bonds_section, topB_bond_to_add, idx_i, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N):
+def updated_bonds_section(bonds_section, top_mutant_bond_to_add, idx_i, idx_i_minus_1_C, idx_i_N, idx_i_C, idx_i_plus_1_N):
     new_bonds_section = Section("bonds")
     bond_i_minus_1_i = False
     bond_i_i_plus_1 = False
@@ -88,20 +94,20 @@ def map_bonds(bonds, mapping):
     return mapped_bonds
 
 
-def get_topB_bond_parameters(molB, bondsB_minus_A, mapping):
-    topB_bond_parameters = None
-    for line in molB.get_section("bonds").lines:
+def get_top_mutant_bond_parameters(mol_mutant, bonds_mutant_minus_wt, mapping):
+    top_mutant_bond_parameters = None
+    for line in mol_mutant.get_section("bonds").lines:
         if line.tokens:
             if line.tokens[0].startswith("#"):
                 continue
             else:
                 idx1, idx2= int(mapping[int(line.tokens[0])]), int(mapping[int(line.tokens[1])])
-                if tuple(sorted((idx1, idx2))) in bondsB_minus_A:
-                    topB_bond_parameters = Line(f"{idx1}  {idx2}  {' '.join(line.tokens[2:])}")
+                if tuple(sorted((idx1, idx2))) in bonds_mutant_minus_wt:
+                    top_mutant_bond_parameters = Line(f"{idx1}  {idx2}  {' '.join(line.tokens[2:])}")
                     break
-    if topB_bond_parameters is None:
-        raise ValueError("Could not find the parameters for the new bond in topology B. This is not supposed to happen.")
-    return topB_bond_parameters
+    if top_mutant_bond_parameters is None:
+        raise ValueError("Could not find the parameters for the new bond in mutant topology. This is not supposed to happen.")
+    return top_mutant_bond_parameters
 
 def extract_angles_from_topology(molecule, mapping : Optional[dict] = None):
     angles_section = molecule.get_section("angles")
@@ -117,7 +123,7 @@ def extract_angles_from_topology(molecule, mapping : Optional[dict] = None):
                 angles_set.add(tuple((idx3, idx2, idx1)))
     return angles_set
 
-def updated_angles_section(angles_section, idx_i, topB_angles_to_add):
+def updated_angles_section(angles_section, idx_i, top_mutant_angles_to_add):
     new_angles_section = Section("angles")
     residue_i_internal_angles = []
     angles_involving_residue_i = []
@@ -135,34 +141,45 @@ def updated_angles_section(angles_section, idx_i, topB_angles_to_add):
         else:
             new_angles_section.add_line(line)
 
+    new_angles_section.add_line(Line(f"#ifdef INTERNAL_I_ANGLES"))
     for line in residue_i_internal_angles:
         new_angles_section.add_line(Line(f"{line.raw} ; internal angle for residue i"))
+    new_angles_section.add_line(Line(f"#endif"))
 
-    new_angles_section.add_line(Line(f"#ifdef EDGE_3"))
+    new_angles_section.add_line(Line(f"#ifdef DUAL_TOP_ANGLES"))
     for line in angles_involving_residue_i:
         idx1, idx2, idx3, ftype, theta0, fc = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), line.tokens[3], line.tokens[4], line.tokens[5]
         new_angles_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {ftype}  {theta0}  {fc}  {theta0}  0.0 ; turning off angles involving residue i"))
-    for line in topB_angles_to_add:
-        new_angles_section.add_line(Line(f"\t{line.raw} ; turning on Top B angles"))
-    new_angles_section.add_line(Line(f"#else"))
+    for line in top_mutant_angles_to_add:
+        idx1, idx2, idx3, ftype, theta0, fc = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), line.tokens[3], line.tokens[4], line.tokens[5]
+        new_angles_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {ftype}  {theta0}  0.0  {theta0}   {fc} ; turning on Top B angles"))
+    new_angles_section.add_line(Line(f"#endif"))
+
+    new_angles_section.add_line(Line(f"#ifdef NEW_ANGLES"))
+    for line in top_mutant_angles_to_add:
+        new_angles_section.add_line(Line(f"{line.raw} ; topB angles"))
+    new_angles_section.add_line(Line(f"#endif"))
+
+
+    new_angles_section.add_line(Line(f"#ifdef ANGLES_OF_RES_I"))
     for line in angles_involving_residue_i:
         new_angles_section.add_line(Line(f"\t{line.raw} ; angle involving residue i"))
     new_angles_section.add_line(Line(f"#endif"))
     new_angles_section.add_line(Line(f""))
     return new_angles_section
 
-def get_topB_angles_parameters(molB, anglesB_minus_A, mapping):
-    molB_angles_to_add = []
-    for angle in anglesB_minus_A:
-        for line in molB.get_section("angles").lines:
+def get_top_mutant_angles_parameters(mol_mutant, angles_mutant_minus_wt, mapping):
+    mol_mutant_angles_to_add = []
+    for angle in angles_mutant_minus_wt:
+        for line in mol_mutant.get_section("angles").lines:
             if line.tokens:
                 idx1, idx2, idx3, ftype, theta0, fc = int(mapping[int(line.tokens[0])]), int(mapping[int(line.tokens[1])]), int(mapping[int(line.tokens[2])]), line.tokens[3], line.tokens[4], line.tokens[5]
                 if tuple((idx1, idx2, idx3)) == angle or tuple((idx3, idx2, idx1)) == angle:
-                    molB_angles_to_add.append(Line(f"\t{idx1}  {idx2}  {idx3}  {ftype}  {theta0}  0.0  {theta0}  {fc}"))
+                    mol_mutant_angles_to_add.append(Line(f"\t{idx1}  {idx2}  {idx3}  {ftype}  {theta0}  {fc}"))
                     break
-    return molB_angles_to_add
+    return mol_mutant_angles_to_add
 
-def updated_dihedrals_section(dihedrals_section, idx_i, topB_dihedrals_to_add):
+def updated_dihedrals_section(dihedrals_section, idx_i, top_mutant_dihedrals_to_add):
     new_dihedrals_section = Section("dihedrals")
     residue_i_internal_dihedrals = []
     dihedrals_involving_residue_i = []
@@ -180,17 +197,27 @@ def updated_dihedrals_section(dihedrals_section, idx_i, topB_dihedrals_to_add):
         else:
             new_dihedrals_section.add_line(line)
 
+    new_dihedrals_section.add_line(Line(f"#ifdef INTERNAL_I_DIHEDRALS"))
     for line in residue_i_internal_dihedrals:
         new_dihedrals_section.add_line(Line(f"{line.raw} ; internal dihedral for residue i"))
+    new_dihedrals_section.add_line(Line(f"#endif"))
 
-    new_dihedrals_section.add_line(Line(f"#ifdef EDGE_3"))
+    new_dihedrals_section.add_line(Line(f"#ifdef DUAL_TOP_DIHEDRALS"))
     for line in dihedrals_involving_residue_i:
         idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), int(line.tokens[3]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
         new_dihedrals_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  {fc}  {multiplicity} {phi0}  0.0  {multiplicity} ; turning off dihedral involving residue i"))
-    for line in topB_dihedrals_to_add:
+    for line in top_mutant_dihedrals_to_add:
         idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), int(line.tokens[3]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
         new_dihedrals_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  0.0  {multiplicity} {phi0}  {fc}  {multiplicity}  ; turning on Top B dihedral"))
-    new_dihedrals_section.add_line(Line(f"#else"))
+    new_dihedrals_section.add_line(Line(f"#endif"))
+
+    new_dihedrals_section.add_line(Line(f"#ifdef NEW_DIHEDRALS"))
+    for line in top_mutant_dihedrals_to_add:
+        idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(line.tokens[0]), int(line.tokens[1]), int(line.tokens[2]), int(line.tokens[3]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
+        new_dihedrals_section.add_line(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  {fc}  {multiplicity}  ; Top B dihedral"))
+    new_dihedrals_section.add_line(Line(f"#endif"))
+
+    new_dihedrals_section.add_line(Line(f"#ifdef DIHEDRALS_OF_RES_I"))
     for line in dihedrals_involving_residue_i:
         new_dihedrals_section.add_line(Line(f"\t{line.raw} ; dihedral involving residue i"))
     new_dihedrals_section.add_line(Line(f"#endif"))
@@ -198,16 +225,16 @@ def updated_dihedrals_section(dihedrals_section, idx_i, topB_dihedrals_to_add):
     return new_dihedrals_section
 
 
-def get_topB_dihedrals_parameters(molB, dihedralsB_minus_A, mapping):
-    molB_dihedrals_to_add = []
-    for dihedral in dihedralsB_minus_A:
-        for line in molB.get_section("dihedrals").lines:
+def get_top_mutant_dihedrals_parameters(mol_mutant, dihedrals_mutant_minus_wt, mapping):
+    mol_mutant_dihedrals_to_add = []
+    for dihedral in dihedrals_mutant_minus_wt:
+        for line in mol_mutant.get_section("dihedrals").lines:
             if line.tokens:
                 idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity = int(mapping[int(line.tokens[0])]), int(mapping[int(line.tokens[1])]), int(mapping[int(line.tokens[2])]), int(mapping[int(line.tokens[3])]), line.tokens[4], line.tokens[5], line.tokens[6], line.tokens[7]
                 if tuple((idx1, idx2, idx3, idx4, ftype, phi0, fc, multiplicity)) == dihedral or tuple((idx4, idx3, idx2, idx1, ftype, phi0, fc, multiplicity)) == dihedral:
-                    molB_dihedrals_to_add.append(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  {fc}  {multiplicity}"))
+                    mol_mutant_dihedrals_to_add.append(Line(f"\t{idx1}  {idx2}  {idx3}  {idx4}  {ftype}  {phi0}  {fc}  {multiplicity}"))
                     break
-    return molB_dihedrals_to_add
+    return mol_mutant_dihedrals_to_add
 
 
 def extract_dihedrals_from_topology(molecule, mapping : Optional[dict] = None):

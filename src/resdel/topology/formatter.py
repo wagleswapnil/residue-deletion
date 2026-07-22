@@ -109,9 +109,9 @@ class GromacsFormatter(Formatter):
             return super().format_line(line)
 
     def _format_pairs_nb_line(self, line: Line) -> str:
-        if len(line.tokens) == 6:
-            ai, aj, q1, q2, sigma, epsilon = line.tokens
-            return self._append_comment_to_line(f"{ai:>6s} {aj:>6s} {float(q1):12.8f} {float(q2):12.8f} {float(sigma):12.8f} {float(epsilon):12.8f}", line.comment)
+        if len(line.tokens) == 7:
+            ai, aj, ftype, q1, q2, sigma, epsilon = line.tokens
+            return self._append_comment_to_line(f"{ai:>6s} {aj:>6s} {ftype:>4s} {float(q1):12.8f} {float(q2):12.8f} {float(sigma):12.8f} {float(epsilon):12.8f}", line.comment)
         else:
             return super().format_line(line)
 
