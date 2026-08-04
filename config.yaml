@@ -1,12 +1,12 @@
 system:
-  name: GAG_GG
-  sequence: "ACE-GLY-ALA-GLY-NME"
-  residue_to_delete: 3 
+  name: AAA_AA
+  sequence: "ACE-ALA-ALA-ALA-NME"
+  residue_to_delete: 2
 
 io:
   working_dir: 
   input_mdp_dir:
-  output_dir: resdel_output
+  output_dir: resdel_output_2
   output_prefix:
   log_file: 
   error_file:
@@ -18,8 +18,8 @@ prepare:
 
 transform:
   molecule_name:
-  number_of_lambdas: 15
-  lambda_vector:
+  number_of_lambdas:  
+  lambda_vector: [0.0, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.0]
   vdw_lambda_vector:
   coul_lambda_vector:
   states:

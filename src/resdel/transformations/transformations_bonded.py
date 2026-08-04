@@ -18,9 +18,11 @@ def add_new_bond(mol, top_mutant_bond_to_add):
         idx1, idx2, r0, fc = top_mutant_bond_to_add.tokens[0], top_mutant_bond_to_add.tokens[1], top_mutant_bond_to_add.tokens[3], top_mutant_bond_to_add.tokens[4]
         line = Line(f"#ifdef NEW_DIST_RESTR")
         mol.get_section("bonds").add_line(line)
-        min_d, max_d = get_min_max_distances(idx1, idx2)
-        restr_rmax = max_d + 1.0
-        line = Line(f"\t{idx1}  {idx2} {restr_ftype}  {min_d}  {max_d}  {restr_rmax}  {fc}  {r0} {r0}  {restr_rmax}  {fc} ; Distance restraint for the new bond between atoms {idx1} and {idx2}")
+        #min_d, max_d = get_min_max_distances(idx1, idx2)
+        max_d = 0.65
+        min_d = 0.5       
+        restr_rmax = 1.65
+        line = Line(f"\t{idx1}  {idx2} {restr_ftype}  {min_d}  {max_d}  {restr_rmax}  {float(fc) * 0.01}  {r0} {r0}  {restr_rmax}  {fc} ; Distance restraint for the new bond between atoms {idx1} and {idx2}")
         mol.get_section("bonds").add_line(line)
         line = Line(f"#endif")
         mol.get_section("bonds").add_line(line)
@@ -30,10 +32,32 @@ def add_new_bond(mol, top_mutant_bond_to_add):
         mol.get_section("bonds").add_line(line)
         line = Line(f"#endif")
         mol.get_section("bonds").add_line(line)
-        line = Line(f"")
-        mol.get_section("bonds").add_line(line)
+        #line = Line(f"")
+        #mol.get_section("bonds").add_line(line)
     else:
         print("Warning: No new bond parameters provided. Distance restraints for the new bond will not be added.")
+    return
+
+def _get_edge1_distance_restraint_line(idx1, idx2, fc, restr_ftype, restr_rmax, restr_rmin, lambda_value):
+    fc = fc * lambda_value * 0.01
+    line = Line(f"\t{idx1}  {idx2} {restr_ftype}  {restr_rmin}  {restr_rmax} 1.65 {fc}")
+    return line
+
+def add_edge1_distance_restraints(mol, top_mutant_bond_to_add, edge1_steps, edge1_lambda_vector):
+    restr_ftype = "10"
+    restr_rmax = 0.65
+    restr_rmin = 0.5
+    idx1, idx2, r0, fc = top_mutant_bond_to_add.tokens[0], top_mutant_bond_to_add.tokens[1], top_mutant_bond_to_add.tokens[3], top_mutant_bond_to_add.tokens[4]
+    idx1, idx2, r0, fc = int(idx1), int(idx2), float(r0), float(fc)
+    for step in range(0, len(edge1_lambda_vector)):
+        line = Line(f"#ifdef EDGE1_{step}")
+        mol.get_section("bonds").add_line(line)
+        line = _get_edge1_distance_restraint_line(idx1, idx2, fc, restr_ftype, restr_rmax, restr_rmin, edge1_lambda_vector[step])
+        mol.get_section("bonds").add_line(line)
+        line = Line(f"#endif")
+        mol.get_section("bonds").add_line(line)
+    line = Line(f"")
+    mol.get_section("bonds").add_line(line)
     return
 
 def extract_harmonic_bonds_from_topology(molecule):

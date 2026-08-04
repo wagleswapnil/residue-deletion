@@ -17,7 +17,7 @@ def add_exclusions_section_to_topology(exclusions_list):
     return exclusions_section           
 
 
-def get_pairs_nb_objects(pairs_list, exclusions_list, edge1_steps, sigma_epsilon_charges, comb_rule, fudge_QQ):
+def get_pairs_nb_objects(pairs_list, exclusions_list, sigma_epsilon_charges, comb_rule, fudge_QQ):
     pairs_nb_list = []
     for x in sorted(pairs_list):
         pairs_nb_list.append(Pair_nb_object(x, sigma_epsilon_charges[str(x[0])], sigma_epsilon_charges[str(x[1])], stateA="full_interactions", stateB="scaled_interactions", comb_rule=comb_rule, fudge_QQ=fudge_QQ))
@@ -26,17 +26,21 @@ def get_pairs_nb_objects(pairs_list, exclusions_list, edge1_steps, sigma_epsilon
     return pairs_nb_list
        
 
-def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_steps, sigma_epsilon_charges, comb_rule, fudge_QQ):
-    pairs_nb_list = get_pairs_nb_objects(pairs_list, exclusions_list, edge1_steps, sigma_epsilon_charges, comb_rule, fudge_QQ)
+def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_lambda_vector, sigma_epsilon_charges, comb_rule, fudge_QQ):
+    pairs_nb_list = get_pairs_nb_objects(pairs_list, exclusions_list, sigma_epsilon_charges, comb_rule, fudge_QQ)
     pairs_nb_section = Section("pairs_nb")
-    for step in range(0, edge1_steps + 1):
-        pairs_nb_section.add_line(Line(f"#ifdef EDGE1_STEP{step}"))
+    pairs_nb_section.add_line(Line(f"#ifdef STAGE1"))
+    for pair_nb in pairs_nb_list:
+            pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[0]))
+    pairs_nb_section.add_line(Line("#endif"))
+    for step in range(0, len(edge1_lambda_vector)):
+        pairs_nb_section.add_line(Line(f"#ifdef EDGE1_{step}"))
         for pair_nb in pairs_nb_list:
-            pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / edge1_steps))
+            pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[step]))
         pairs_nb_section.add_line(Line("#endif"))
     pairs_nb_section.add_line(Line(f"#ifdef STAGE2"))
     for pair_nb in pairs_nb_list:
-        pairs_nb_section.add_line(pair_nb.get_pair_nb_line(step / edge1_steps))
+        pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[step]))
     pairs_nb_section.add_line(Line("#endif"))
     pairs_nb_section.add_line(Line(""))
     pairs_nb_section.add_line(Line(""))

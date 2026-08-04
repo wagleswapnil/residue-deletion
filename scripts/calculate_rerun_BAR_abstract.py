@@ -4,12 +4,33 @@ import pandas as pd
 import pmx
 import subprocess
 from resdel.analysis.plot_work import plot_work_dist
+from scipy.stats import gaussian_kde
 
 p1 = os.path.abspath(sys.argv[1])
 t1 = os.path.abspath(sys.argv[2])
 p2 = os.path.abspath(sys.argv[3])
 t2 = os.path.abspath(sys.argv[4])
 recalc = int(sys.argv[5])
+
+def bhattacharyya_coefficient(x1, x2, npoints=1000):
+    """
+    Calculate the Bhattacharyya coefficient between two 1D datasets.
+    """
+
+    kde1 = gaussian_kde(x1)
+    kde2 = gaussian_kde(x2)
+
+    xmin = min(np.min(x1), np.min(x2))
+    xmax = max(np.max(x1), np.max(x2))
+
+    grid = np.linspace(xmin, xmax, npoints)
+
+    p = kde1(grid)
+    q = kde2(grid)
+
+    bc = np.trapz(np.sqrt(p*q), grid)
+
+    return bc
 
 out_folder = "temp"
 input_option = "Potential"
@@ -63,8 +84,7 @@ rpb = rpb.dropna()
 rpf = np.array(rpf)
 rpb = np.array(rpb)
 
-rpf = rpf[rpf <= 100]
-rpb = rpb[rpb <= 100]
+print(f"BC= {bhattacharyya_coefficient(rpf, rpb)}")
 
 energy = pmx.estimators.BAR(rpf, rpb, 298.15)
 fe_value = energy.dg * 0.239006 

@@ -31,5 +31,5 @@ def calculate_fe_from_reduced_potentials(state1, state2, out_folder):
     fe_error = energy.err * 0.239006
     print(f"Free energy difference between {state1} and {state2}: {fe_value:.3f} ± {fe_error:.3f} kcal/mol")
     #breakpoint()
-    #plot_work_dist(wf=rpf, wr=rpb, nbins=10, dG=energy.dg, dGerr=energy.err, fname=os.path.join(out_folder, f"{state1}_{state2}_Wdist.png"))
+    plot_work_dist(wf=rpf, wr=rpb, nbins=10, dG=energy.dg, dGerr=energy.err, fname=os.path.join(out_folder, f"{state1}_{state2}_Wdist.png"))
     return fe_value, fe_error

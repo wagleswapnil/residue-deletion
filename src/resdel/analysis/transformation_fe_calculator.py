@@ -32,9 +32,12 @@ class TransformationFE:
         if self.edge1_steps == None:
             print("ERROR: No. of Edge 1 steps are needed.")
             quit()
-        out_folder= os.path.join(os.getcwd(), "test", f"edge1_{self.edge1_steps}_edge3_0")
-        self.calculate_reduced_potentials(f"edge1_{self.edge1_steps}", "edge3_0", out_folder)
-        fe, err = calculate_fe_from_reduced_potentials(f"edge1_{self.edge1_steps}", "edge3_0", out_folder)
+        
+        out_folder= os.path.join(os.getcwd(), "test", f"edge1_{self.edge1_steps - 1}_edge3_0")
+        if not os.path.exists(out_folder):
+            os.makedirs(out_folder)
+        self.calculate_reduced_potentials(f"edge1_{self.edge1_steps - 1}", "edge3_0", out_folder)
+        fe, err = calculate_fe_from_reduced_potentials(f"edge1_{self.edge1_steps - 1}", "edge3_0", out_folder)
         print("Edge 2 FE in kcal/mol: ")
         print(fe, err)
         return fe, err
@@ -82,7 +85,7 @@ class TransformationFE:
 
     def edge4_fe(self):
         if self.edge3_steps == None:
-            self.edge3_steps=20
+            self.edge3_steps=16
         out_folder= os.path.join(os.getcwd(), "test", f"edge3_{self.edge3_steps-1}_stage5")
         if not os.path.exists(out_folder):
             os.makedirs(out_folder)
@@ -101,7 +104,7 @@ class TransformationFE:
             os.makedirs(out_folder)
         self.calculate_reduced_potentials("stage1", "edge1_0", out_folder)
         total_fe, total_error = calculate_fe_from_reduced_potentials("stage1", "edge1_0", out_folder)
-        for step in range(0, self.edge1_steps): 
+        for step in range(0, self.edge1_steps - 1): 
             out_folder= os.path.join(os.getcwd(), "test", f"edge1_{step}_edge1_{step + 1}")
             if not os.path.exists(out_folder):
                 os.makedirs(out_folder)

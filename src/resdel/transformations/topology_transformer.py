@@ -1,5 +1,6 @@
 from resdel.topology import Topology
 from typing import Optional
+import numpy as np
 from resdel.transformations.atom_mapping import build_atom_mapping
 from resdel.transformations.transformations_utils import *
 from resdel.transformations.transformations_nonbonded import *
@@ -15,6 +16,13 @@ class TopologyTransformer:
         self.config = config
         self.paths = paths
         self.edge1_steps = self.config.transform.number_of_lambdas
+        if not self.edge1_steps and self.config.transform.lambda_vector:
+            self.edge1_lambda_vector = self.config.transform.lambda_vector
+            self.edge1_steps = len(self.edge1_lambda_vector)
+        elif self.edge1_steps:
+            self.edge1_lambda_vector = np.round(np.linspace(0, 1, self.edge1_steps), 2)
+        else:
+            raise RuntimeError(f"Value of number_of_lambdas or lambda_vector required for transform.")
         self.residue_to_delete = self.config.system.residue_to_delete
         self.mol_wt = None
         self.mol_mutant = None
@@ -125,7 +133,7 @@ class TopologyTransformer:
     def add_pairs_nb_exclusions_to_topology(self):
         exclusions_mutant_minus_wt, exclusions_temp_minus_wt_mutant = self.compute_pairs_nb_exclusions_to_add()
         self.mol_wt.add_section(add_exclusions_section_to_topology(sorted(self.pairs_mutant_minus_wt.union(exclusions_mutant_minus_wt).union(exclusions_temp_minus_wt_mutant))))
-        self.mol_wt.add_section(add_pairs_nb_section_to_topology(self.pairs_mutant_minus_wt, exclusions_mutant_minus_wt.union(exclusions_temp_minus_wt_mutant), self.edge1_steps, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
+        self.mol_wt.add_section(add_pairs_nb_section_to_topology(self.pairs_mutant_minus_wt, exclusions_mutant_minus_wt.union(exclusions_temp_minus_wt_mutant), self.edge1_lambda_vector, self.sigma_epsilon_charges, self.comb_rule, self.fudge_QQ))
         return
     
     def edit_header_sections(self):
@@ -170,6 +178,7 @@ class TopologyTransformer:
         top_mutant_bond_to_add = self.compute_bonds_to_transform()
         self.mol_wt.replace_section("bonds", updated_bonds_section(self.mol_wt.get_section("bonds"), top_mutant_bond_to_add, self.idx_i, self.idx_i_minus_1_C, self.idx_i_N, self.idx_i_C, self.idx_i_plus_1_N))
         add_new_bond(self.mol_wt, top_mutant_bond_to_add)
+        add_edge1_distance_restraints(self.mol_wt, top_mutant_bond_to_add, self.edge1_steps, self.edge1_lambda_vector)
 
         self.mol_wt.replace_section("angles", updated_angles_section(self.mol_wt.get_section("angles"), self.idx_i, self.compute_angles_to_add()))
         self.mol_wt.replace_section("dihedrals", updated_dihedrals_section(self.mol_wt.get_section("dihedrals"), self.idx_i, self.compute_dihedrals_to_add()))

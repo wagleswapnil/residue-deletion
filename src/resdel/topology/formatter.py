@@ -69,6 +69,9 @@ class GromacsFormatter(Formatter):
         elif len(line.tokens) == 11:
             ai, aj, funct, r1, r2, rmax, fc, r1B, r2B, rmaxB, fcB = line.tokens
             return self._append_comment_to_line(f"{ai:>6s} {aj:>6s} {funct:>4s}  {float(r1):10.6f} {float(r2):10.6f} {float(rmax):10.6f} {float(fc):15.6f}  {float(r1B):10.6f} {float(r2B):10.6f} {float(rmaxB):10.6f} {float(fcB):15.6f}", line.comment)
+        elif len(line.tokens) == 7:
+            ai, aj, funct, r1, r2, rmax, fc = line.tokens
+            return self._append_comment_to_line(f"{ai:>6s} {aj:>6s} {funct:>4s}  {float(r1):10.6f} {float(r2):10.6f} {float(rmax):10.6f} {float(fc):15.6f}", line.comment)
         else:
             return super().format_line(line)
 
