@@ -23,9 +23,11 @@ venv/
 .DS_Store
 
 # for now
+test/
 tests/
 temp/
 resdel_output_2/
 resdel_output/
 python_workflow/
 rbfe_gag_gg7/
+snakemake_workflow/
