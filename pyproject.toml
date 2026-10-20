@@ -7,7 +7,14 @@ name = "resdel"
 version = "0.1.0"
 description = "Tools for manipulating GROMACS topologies"
 requires-python = ">=3.10"
-dependencies = ["typer", "pyyaml", "openmm", "ParmEd", "pdb-tools"]
+dependencies = ["typer", 
+	"pyyaml", 
+	"openmm", 
+	"ParmEd", 
+	"pdb-tools",
+	"biopython>=1.81",
+	"bio2byte.PeptideBuilder @ git+https://github.com/Bio2Byte/bio2byte-peptidebuilder@afce6aceb4e59ce86993a76c245af648e3de5663",
+	]
 
 [project.scripts]
 resdel="resdel.cli.main:app"
