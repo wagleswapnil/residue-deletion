@@ -22,13 +22,14 @@ venv/
 # OS junk
 .DS_Store
 
+#Jupyterlab checkpoints
+.ipynb_checkpoints/
+
 # for now
 test/
-tests/
 temp/
 resdel_output_2/
 resdel_output/
 python_workflow/
 rbfe_gag_gg7/
 snakemake_workflow/
-scripts/
