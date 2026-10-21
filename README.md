@@ -47,13 +47,13 @@ module load python/3.10
 python -m venv .venv
 source .venv/bin/activate
 
-pip install git+https://github.com/wagleswapnil/resdel
+pip install git+https://github.com/wagleswapnil/residue-deletion
 ```
 
 Or from a local clone:
 
 ```bash
-git clone https://github.com/wagleswapnil/resdel
+git clone https://github.com/wagleswapnil/residue-deletion
 cd resdel
 pip install .
 ```
@@ -148,7 +148,7 @@ Keys a new user has to set:
 ## Development
 
 ```bash
-git clone https://github.com/wagleswapnil/resdel
+git clone https://github.com/wagleswapnil/residue-deletion
 cd resdel
 pip install -e .
 ```
