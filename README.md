@@ -33,6 +33,7 @@ to run alchemical free energy simulation for the residue deletion.
 
 - Python ≥ 3.10
 - GROMACS 2022.1 or later, available on `PATH` as `gmx`
+- [pmx](https://github.com/deGrootLab/pmx) (develop branch), installed separately.
 - Network access to `github.com` at install time (see [Dependencies](#dependencies))
 
 On HPC systems you will usually need to load a Python module first:
