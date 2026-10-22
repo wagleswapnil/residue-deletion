@@ -1,3 +1,5 @@
+![CI](https://github.com/wagleswapnil/resdel/actions/workflows/ci.yml/badge.svg)
+
 ```
                                ██╗          ██╗  
                                ██║          ██║  
@@ -165,9 +167,9 @@ when `gmx` is not on `PATH`.
 
 ## Known limitations
 
-     - Tested on amber14sb/tip3p so far.
-     - Deletion of charged residue is not supported.
-     - The test suite (pytest) is still being built out
+     - Tests performed on amber14sb/tip3p so far.
+     - Deletion of charged residue yet to be added.
+     - The test suite (pytest) is still being built out.
 
 ## License
 
