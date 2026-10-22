@@ -1,10 +1,8 @@
 import typer
 
-from resdel.config.loader import load_config
 
 from resdel.cli.prepare import app as prepare_app
 from resdel.cli.transform import app as transform_app
-from resdel.cli.extract_top import app as extract_top_app
 from resdel.cli.analyze import app as analyze_app
 
 app = typer.Typer()

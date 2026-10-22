@@ -1,9 +1,5 @@
 from .topology import Topology
-from .line import Line
-from .section import Section
-from .molecule import Molecule
-from .topology import Topology
-from .formatter import GromacsFormatter, Formatter
+from .formatter import Formatter
 
 class Writer:
     def __init__(self, topology: Topology, file_path: str, formatter=None):

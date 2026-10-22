@@ -13,7 +13,7 @@ class Parser:
         self.current_section: Section = None
         self.current_molecule: Molecule = None
         self.current_state = None  # Possible states: HEADER, MOLECULE, TAIL
-        count = 0
+        #count = 0
         with open(self.file_path, 'r') as f:
             for raw_line in f:
                 line = Line(raw_line)

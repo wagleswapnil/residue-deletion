@@ -1,4 +1,4 @@
-from resdel.topology import *
+from resdel.topology import Section, Line
 from resdel.transformations.pair_nb import Pair_nb_object
 
 def add_exclusions_section_to_topology(exclusions_list):
@@ -29,7 +29,7 @@ def get_pairs_nb_objects(pairs_list, exclusions_list, sigma_epsilon_charges, com
 def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_lambda_vector, sigma_epsilon_charges, comb_rule, fudge_QQ):
     pairs_nb_list = get_pairs_nb_objects(pairs_list, exclusions_list, sigma_epsilon_charges, comb_rule, fudge_QQ)
     pairs_nb_section = Section("pairs_nb")
-    pairs_nb_section.add_line(Line(f"#ifdef STAGE1"))
+    pairs_nb_section.add_line(Line("#ifdef STAGE1"))
     for pair_nb in pairs_nb_list:
             pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[0]))
     pairs_nb_section.add_line(Line("#endif"))
@@ -38,7 +38,7 @@ def add_pairs_nb_section_to_topology(pairs_list, exclusions_list, edge1_lambda_v
         for pair_nb in pairs_nb_list:
             pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[step]))
         pairs_nb_section.add_line(Line("#endif"))
-    pairs_nb_section.add_line(Line(f"#ifdef STAGE2"))
+    pairs_nb_section.add_line(Line("#ifdef STAGE2"))
     for pair_nb in pairs_nb_list:
         pairs_nb_section.add_line(pair_nb.get_pair_nb_line(edge1_lambda_vector[step]))
     pairs_nb_section.add_line(Line("#endif"))
@@ -72,17 +72,17 @@ def updated_pairs_section(pairs_section, idx_i, top_mutant_pairs_to_add):
         else:
             new_pairs_section.add_line(line)
 
-    new_pairs_section.add_line(Line(f"#ifdef INTERNAL_I_PAIRS"))
+    new_pairs_section.add_line(Line("#ifdef INTERNAL_I_PAIRS"))
     for line in residue_i_internal_pairs:
         new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  internal pair for residue i"))
-    new_pairs_section.add_line(Line(f"#endif"))
+    new_pairs_section.add_line(Line("#endif"))
 
-    new_pairs_section.add_line(Line(f"#ifdef PAIRS_RES_I"))
+    new_pairs_section.add_line(Line("#ifdef PAIRS_RES_I"))
     for line in pairs_involving_residue_i:
         new_pairs_section.add_line(Line(f"\t{line.tokens[0]}  {line.tokens[1]}  {line.tokens[2]}; {' '.join(line.tokens[3:])}  pair involving residue i"))
-    new_pairs_section.add_line(Line(f"#endif"))
+    new_pairs_section.add_line(Line("#endif"))
     
-    new_pairs_section.add_line(Line(f"#ifdef NEW_PAIRS"))
+    new_pairs_section.add_line(Line("#ifdef NEW_PAIRS"))
     for line in top_mutant_pairs_to_add:
         idx1, idx2, ftype = line.tokens[0], line.tokens[1], line.tokens[2]
         new_pairs_section.add_line(Line(f"\t{idx1}  {idx2}  {ftype} ;  Top B pair"))
@@ -120,19 +120,19 @@ def updated_atoms_section(atoms_section, idx_i, dual_state_atoms_to_add, dummy_a
         if line.tokens:
             nr, type, resnr, residue, atom, cgnr, charge, mass = line.tokens[0:8]
             if int(nr) == min(idx_i):
-                new_atoms_section.add_line(Line(f"#ifdef DUAL_STATE_ATOMS"))
+                new_atoms_section.add_line(Line("#ifdef DUAL_STATE_ATOMS"))
                 for dual_state_atom in dual_state_atoms_to_add:
                     new_atoms_section.add_line(dual_state_atom)
-                new_atoms_section.add_line(Line(f"#endif"))
-                new_atoms_section.add_line(Line(f"#ifdef DUMMY_RES_I_ATOMS"))
+                new_atoms_section.add_line(Line("#endif"))
+                new_atoms_section.add_line(Line("#ifdef DUMMY_RES_I_ATOMS"))
                 for dummy_atom in dummy_atoms_to_add:
                     new_atoms_section.add_line(dummy_atom)
-                new_atoms_section.add_line(Line(f"#endif"))
-                new_atoms_section.add_line(Line(f"#ifdef REAL_RES_I_ATOMS"))
+                new_atoms_section.add_line(Line("#endif"))
+                new_atoms_section.add_line(Line("#ifdef REAL_RES_I_ATOMS"))
                 new_atoms_section.add_line(line)
             elif int(nr) == max(idx_i):
                 new_atoms_section.add_line(line)
-                new_atoms_section.add_line(Line(f"#endif"))
+                new_atoms_section.add_line(Line("#endif"))
             else:
                 new_atoms_section.add_line(line)
         else:
@@ -146,11 +146,11 @@ def add_dummy_atomtypes_to_topology(atomtypes_section):
             continue
         else:
             new_atomtypes_section.add_line(line)
-    new_atomtypes_section.add_line(Line(f"dum_H     0.000000     0.000000   A     0.000000     0.000000"))
-    new_atomtypes_section.add_line(Line(f"dum_O     0.000000     0.000000   A     0.000000     0.000000"))
-    new_atomtypes_section.add_line(Line(f"dum_N     0.000000     0.000000   A     0.000000     0.000000"))
-    new_atomtypes_section.add_line(Line(f"dum_C     0.000000     0.000000   A     0.000000     0.000000"))
-    new_atomtypes_section.add_line(Line(f"dum_X     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line("dum_H     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line("dum_O     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line("dum_N     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line("dum_C     0.000000     0.000000   A     0.000000     0.000000"))
+    new_atomtypes_section.add_line(Line("dum_X     0.000000     0.000000   A     0.000000     0.000000"))
     new_atomtypes_section.add_line(Line(""))
     return new_atomtypes_section
 

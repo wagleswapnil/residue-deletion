@@ -47,15 +47,15 @@ class PeptideSystemBuilder:
         
         for mol in topology.molecules:
             if mol.name == mol_name:
-                line = Line(f"")
+                line = Line("")
                 mol.sections[-1].add_line(line)
-                line = Line(f"#ifdef POSRES")
+                line = Line("#ifdef POSRES")
                 mol.sections[-1].add_line(line)
-                line = Line(f'#include "posre.itp"')
+                line = Line('#include "posre.itp"')
                 mol.sections[-1].add_line(line)
-                line = Line(f"#endif")
+                line = Line("#endif")
                 mol.sections[-1].add_line(line)
-                line = Line(f"")
+                line = Line("")
                 mol.sections[-1].add_line(line)
         self.write_topology(topology, out_path=out_path)
         return

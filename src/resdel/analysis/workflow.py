@@ -1,4 +1,3 @@
-import sys
 from resdel.analysis.transformation_fe_calculator import TransformationFE
 
 

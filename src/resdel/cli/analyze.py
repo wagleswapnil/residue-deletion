@@ -1,7 +1,6 @@
-
-
-
+import os
 import typer
+from resdel.config.loader import load_config
 from resdel.analysis.workflow import run_analyze_workflow 
 
 app = typer.Typer()

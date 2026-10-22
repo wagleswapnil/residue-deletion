@@ -118,12 +118,12 @@ def plot_work_dist(wf=[], wr=[], fname: Optional[str] = 'Wdist.png', nbins=20, d
         try:
             sm1 = smooth(np.array(wf))
             plt.plot(x1, sm1, 'g-', linewidth=3)
-        except:
+        except (ValueError, IndexError):
             print("Plotting: no smoothing for Wf")
         try:
             sm2 = smooth(np.array(wr))
             plt.plot(x2, sm2, 'b-', linewidth=3)
-        except:
+        except (ValueError, IndexError):
             print("Plotting: no smoothing for Wr")
     elif 'A' in statesProvided:
         maxi = max(wf)
@@ -134,7 +134,7 @@ def plot_work_dist(wf=[], wr=[], fname: Optional[str] = 'Wdist.png', nbins=20, d
         try:
             sm1 = smooth(np.array(wf))
             plt.plot(x1, sm1, 'g-', linewidth=3)
-        except:
+        except (ValueError, IndexError):
             print("Plotting: no smoothing for Wf")
     elif 'B' in statesProvided:
         maxi = max(wr)
@@ -145,7 +145,7 @@ def plot_work_dist(wf=[], wr=[], fname: Optional[str] = 'Wdist.png', nbins=20, d
         try:
             sm2 = smooth(np.array(wr))
             plt.plot(x2, sm2, 'b-', linewidth=3)
-        except:
+        except (ValueError, IndexError):
             print("Plotting: no smoothing for Wr")
 
     plt.legend(shadow=True, fancybox=True, loc='upper center',

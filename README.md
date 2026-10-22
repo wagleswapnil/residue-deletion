@@ -55,7 +55,7 @@ Or from a local clone:
 
 ```bash
 git clone https://github.com/wagleswapnil/residue-deletion
-cd resdel
+cd residue_deletion
 pip install .
 ```
 
@@ -134,7 +134,7 @@ adjacent intermediate states.
 
 ## Configuration
 
-Keys a new user has to set:
+Keys a new user has to set in the `config.yaml` file:
 
 | Key | Description | Default |
 |-----|-------------|---------|
@@ -150,7 +150,7 @@ Keys a new user has to set:
 
 ```bash
 git clone https://github.com/wagleswapnil/residue-deletion
-cd resdel
+cd residue_deletion
 pip install -e .
 ```
 
