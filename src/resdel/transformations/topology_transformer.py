@@ -1,10 +1,10 @@
-from resdel.topology import Topology
+from resdel.topology import Topology, Writer, Line
 from typing import Optional
 import numpy as np
 from resdel.transformations.atom_mapping import build_atom_mapping
-from resdel.transformations.transformations_utils import *
-from resdel.transformations.transformations_nonbonded import *
-from resdel.transformations.transformations_bonded import *
+from resdel.transformations.transformations_utils import map_exclusions_pairs, extract_pairs_from_topology, get_sigma_epsilon_charges, get_residue_atom_idxs
+from resdel.transformations.transformations_nonbonded import updated_atoms_section, get_top_mutant_pairs_parameters, get_dual_state_atoms, add_dummy_atomtypes_to_topology, edit_defaults_section, add_pairs_nb_section_to_topology, add_exclusions_section_to_topology, updated_pairs_section 
+from resdel.transformations.transformations_bonded import updated_bonds_section, updated_dihedrals_section, updated_angles_section, add_edge1_distance_restraints, add_new_bond, get_top_mutant_dihedrals_parameters, extract_dihedrals_from_topology, get_top_mutant_angles_parameters, extract_angles_from_topology, get_top_mutant_bond_parameters, extract_harmonic_bonds_from_topology, map_bonds, add_fc0_bond
 from resdel.topology.formatter import GromacsFormatter
 from resdel.transformations.tpr_object import TPR_Object
 
@@ -22,7 +22,7 @@ class TopologyTransformer:
         elif self.edge1_steps:
             self.edge1_lambda_vector = np.round(np.linspace(0, 1, self.edge1_steps), 2)
         else:
-            raise RuntimeError(f"Value of number_of_lambdas or lambda_vector required for transform.")
+            raise RuntimeError("Value of number_of_lambdas or lambda_vector required for transform.")
         self.residue_to_delete = self.config.system.residue_to_delete
         self.mol_wt = None
         self.mol_mutant = None
@@ -48,15 +48,15 @@ class TopologyTransformer:
     def add_posre_section_to_topology(self):
         for mol in self.top_wt.molecules:
             if mol.name == self.mol_wt_name:
-                line = Line(f"")
+                line = Line("")
                 mol.sections[-1].add_line(line)
-                line = Line(f"#ifdef POSRES")
+                line = Line("#ifdef POSRES")
                 mol.sections[-1].add_line(line)
-                line = Line(f'#include "posre.itp"')
+                line = Line('#include "posre.itp"')
                 mol.sections[-1].add_line(line)
-                line = Line(f"#endif")
+                line = Line("#endif")
                 mol.sections[-1].add_line(line)
-                line = Line(f"")
+                line = Line("")
                 mol.sections[-1].add_line(line)
         return
 

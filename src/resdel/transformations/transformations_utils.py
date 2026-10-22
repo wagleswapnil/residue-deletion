@@ -1,4 +1,3 @@
-from typing import Optional
 
 
 def get_residue_atom_idxs(mol, residue_to_delete):

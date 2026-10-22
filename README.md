@@ -1,3 +1,5 @@
+![CI](https://github.com/wagleswapnil/resdel/actions/workflows/ci.yml/badge.svg)
+
 ```
                                ██╗          ██╗  
                                ██║          ██║  
@@ -33,6 +35,7 @@ to run alchemical free energy simulation for the residue deletion.
 
 - Python ≥ 3.10
 - GROMACS 2022.1 or later, available on `PATH` as `gmx`
+- [pmx](https://github.com/deGrootLab/pmx) (develop branch), installed separately.
 - Network access to `github.com` at install time (see [Dependencies](#dependencies))
 
 On HPC systems you will usually need to load a Python module first:
@@ -47,14 +50,14 @@ module load python/3.10
 python -m venv .venv
 source .venv/bin/activate
 
-pip install git+https://github.com/wagleswapnil/resdel
+pip install git+https://github.com/wagleswapnil/residue-deletion
 ```
 
 Or from a local clone:
 
 ```bash
-git clone https://github.com/wagleswapnil/resdel
-cd resdel
+git clone https://github.com/wagleswapnil/residue-deletion
+cd residue_deletion
 pip install .
 ```
 
@@ -133,7 +136,7 @@ adjacent intermediate states.
 
 ## Configuration
 
-Keys a new user has to set:
+Keys a new user has to set in the `config.yaml` file:
 
 | Key | Description | Default |
 |-----|-------------|---------|
@@ -148,8 +151,8 @@ Keys a new user has to set:
 ## Development
 
 ```bash
-git clone https://github.com/wagleswapnil/resdel
-cd resdel
+git clone https://github.com/wagleswapnil/residue-deletion
+cd residue_deletion
 pip install -e .
 ```
 
@@ -164,9 +167,9 @@ when `gmx` is not on `PATH`.
 
 ## Known limitations
 
-     - Tested on amber14sb/tip3p so far.
-     - Deletion of charged residue is not supported.
-     - The test suite (pytest) is still being built out
+     - Tests performed on amber14sb/tip3p so far.
+     - Deletion of charged residue yet to be added.
+     - The test suite (pytest) is still being built out.
 
 ## License
 

@@ -1,6 +1,6 @@
 from openmm import app
 import parmed as pmd
-from openmm.unit import *
+from openmm.unit import molar, nanometers
 
 # This function takes the 3D structure of a protein/peptide as input and uses OpenMM to generate its topology in the solvated phase.
 # Defult forcefield for protein: amberff14sb, for water: tip3p, default ions: Na+ and Cl-, default padding of the box: 2 nm.

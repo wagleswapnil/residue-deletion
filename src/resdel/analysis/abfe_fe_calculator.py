@@ -1,15 +1,9 @@
-import subprocess
-import os
 import alchemlyb
-from resdel.analysis.calculate_fe_from_reduced_potentials import calculate_fe_from_reduced_potentials
-from glob import glob
 import warnings
 from alchemlyb.estimators import MBAR
 from alchemlyb.parsing.gmx import extract_u_nk
-from alchemlyb.postprocessors.units import get_unit_converter
 from alchemlyb.preprocessing import slicing, statistical_inefficiency
 from alchemlyb.preprocessing.subsampling import decorrelate_u_nk
-from alchemlyb.visualisation import plot_mbar_overlap_matrix
 from alchemlyb.postprocessors.units import to_kcalmol
 
 class AbsoluteFE:

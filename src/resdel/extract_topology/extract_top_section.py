@@ -130,11 +130,11 @@ class ExtractTopSection:
                 continue
             else:
                 new_atomtypes_section.add_line(line)
-        new_atomtypes_section.add_line(Line(f"dum_H     0.000000     0.000000   A     0.000000     0.000000"))
-        new_atomtypes_section.add_line(Line(f"dum_O     0.000000     0.000000   A     0.000000     0.000000"))
-        new_atomtypes_section.add_line(Line(f"dum_N     0.000000     0.000000   A     0.000000     0.000000"))
-        new_atomtypes_section.add_line(Line(f"dum_C     0.000000     0.000000   A     0.000000     0.000000"))
-        new_atomtypes_section.add_line(Line(f"dum_X     0.000000     0.000000   A     0.000000     0.000000"))
+        new_atomtypes_section.add_line(Line("dum_H     0.000000     0.000000   A     0.000000     0.000000"))
+        new_atomtypes_section.add_line(Line("dum_O     0.000000     0.000000   A     0.000000     0.000000"))
+        new_atomtypes_section.add_line(Line("dum_N     0.000000     0.000000   A     0.000000     0.000000"))
+        new_atomtypes_section.add_line(Line("dum_C     0.000000     0.000000   A     0.000000     0.000000"))
+        new_atomtypes_section.add_line(Line("dum_X     0.000000     0.000000   A     0.000000     0.000000"))
         new_atomtypes_section.add_line(Line(""))
         return new_atomtypes_section
 

@@ -1,5 +1,4 @@
 from resdel.extract_topology.extract_top_section import ExtractTopSection
-from resdel.utils.utils import generate_vacuum_topology_from_solvent_topology
 import sys
 
 in_path = sys.argv[1]
